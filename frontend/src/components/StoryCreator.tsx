@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
-import { createStory } from "@/lib/api";
+import { createStory, getLlmProviders } from "@/lib/api";
 import {
   DEFAULT_STORY_PREFERENCES,
   loadStoryPreferences,
@@ -17,6 +17,8 @@ import {
 import type {
   Audience,
   Category,
+  LlmProvider,
+  LlmProviderStatus,
   StoryOptions,
   StoryType,
   VisualStyle,
@@ -30,11 +32,37 @@ const defaultOptions: StoryOptions = {
 export function StoryCreator() {
   const router = useRouter();
   const [options, setOptions] = useState<StoryOptions>(defaultOptions);
+  const [llmProviders, setLlmProviders] = useState<LlmProviderStatus[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setOptions((prev) => ({ ...prev, ...loadStoryPreferences() }));
+    const saved = loadStoryPreferences();
+    setOptions((prev) => ({ ...prev, ...saved }));
+
+    getLlmProviders()
+      .then((providers) => {
+        setLlmProviders(providers);
+        const savedProvider = saved.llm_provider ?? "openai";
+        const isSavedAvailable = providers.some(
+          (p) => p.id === savedProvider && p.available,
+        );
+        if (!isSavedAvailable) {
+          const fallback =
+            providers.find((p) => p.available)?.id ?? "openai";
+          setOptions((prev) => ({ ...prev, llm_provider: fallback }));
+        }
+      })
+      .catch(() => {
+        setLlmProviders([
+          {
+            id: "openai",
+            label: "OpenAI",
+            configured: false,
+            available: true,
+          },
+        ]);
+      });
   }, []);
 
   function updatePreferences(
@@ -172,6 +200,30 @@ export function StoryCreator() {
               updatePreferences({ character_name: e.target.value })
             }
           />
+        </Field>
+
+        <Field label="Story writer (LLM)" id="llm_provider">
+          <select
+            id="llm_provider"
+            className="select-field"
+            value={options.llm_provider ?? "openai"}
+            onChange={(e) =>
+              updatePreferences({
+                llm_provider: e.target.value as LlmProvider,
+              })
+            }
+          >
+            {(llmProviders.length > 0
+              ? llmProviders
+              : [{ id: "openai" as const, label: "OpenAI", configured: false, available: true }]
+            ).map((p) => (
+              <option key={p.id} value={p.id} disabled={!p.available}>
+                {p.label}
+                {!p.available ? " (not configured)" : ""}
+                {p.available && !p.configured ? " (demo mode)" : ""}
+              </option>
+            ))}
+          </select>
         </Field>
       </div>
 

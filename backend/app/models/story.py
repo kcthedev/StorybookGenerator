@@ -60,6 +60,17 @@ class ReadingLayout(str, Enum):
     VERTICAL = "vertical"
 
 
+class LlmProvider(str, Enum):
+    OPENAI = "openai"
+    GEMINI = "gemini"
+
+
+LLM_PROVIDER_LABELS = {
+    LlmProvider.OPENAI: "OpenAI",
+    LlmProvider.GEMINI: "Google Gemini",
+}
+
+
 class StoryOptions(BaseModel):
     idea: str = Field(..., min_length=3, max_length=500)
     category: Category
@@ -67,6 +78,7 @@ class StoryOptions(BaseModel):
     story_type: StoryType
     audience: Audience = Audience.ALL_AGES
     character_name: str = Field(default="Alex", min_length=1, max_length=50)
+    llm_provider: LlmProvider = LlmProvider.OPENAI
 
 
 class ActionChoice(BaseModel):
@@ -114,3 +126,14 @@ class StorySummary(BaseModel):
     idea: str
     category: Category
     page_count: int
+
+
+class LlmProviderStatus(BaseModel):
+    id: LlmProvider
+    label: str
+    configured: bool
+    available: bool
+
+
+class LlmProvidersResponse(BaseModel):
+    providers: list[LlmProviderStatus]

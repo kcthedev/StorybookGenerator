@@ -10,7 +10,7 @@ from app.models.story import (
     StoryState,
     StorySummary,
 )
-from app.services.openai_service import OpenAIService
+from app.services.llm_factory import get_image_service, get_text_service
 
 MAX_PAGES = 8
 
@@ -18,7 +18,7 @@ MAX_PAGES = 8
 class StoryService:
     def __init__(self) -> None:
         self._stories: dict[str, StoryState] = {}
-        self._openai = OpenAIService()
+        self._images = get_image_service()
 
     def list_stories(self) -> list[StorySummary]:
         return [
@@ -39,9 +39,16 @@ class StoryService:
         return story
 
     def create_story(self, request: CreateStoryRequest) -> StoryState:
-        data = self._openai.generate_first_page(request)
+        text_service = get_text_service(request)
+        data = text_service.generate_first_page(request)
         story_id = str(uuid.uuid4())
-        page = self._openai.build_story_page(data, page_number=1, options=request, story_id=story_id)
+        page = self._images.build_story_page(
+            data,
+            page_number=1,
+            options=request,
+            story_id=story_id,
+            text_service=text_service,
+        )
         story = StoryState(
             id=story_id,
             title=data.get("title", "Untitled Story"),
@@ -77,18 +84,20 @@ class StoryService:
             self._stories[story_id] = story
             return story
 
-        data = self._openai.generate_next_page(
+        text_service = get_text_service(story.options)
+        data = text_service.generate_next_page(
             options=story.options,
             page_number=next_page_num,
             previous_text=current.text,
             choice_label=choice.label,
             total_pages=MAX_PAGES,
         )
-        page = self._openai.build_story_page(
+        page = self._images.build_story_page(
             data,
             page_number=next_page_num,
             options=story.options,
             story_id=story_id,
+            text_service=text_service,
         )
         story.pages.append(page)
         story.current_page = len(story.pages) - 1
@@ -115,15 +124,16 @@ class StoryService:
         story_id: str,
         last_choice_label: str,
     ) -> StoryPage:
-        data = self._openai.generate_forced_ending(
+        text_service = get_text_service(story.options)
+        data = text_service.generate_forced_ending(
             options=story.options,
             title=story.title,
             pages=story.pages,
             last_choice_label=last_choice_label,
         )
-        page = self._openai.to_story_page(data, page_number)
+        page = text_service.to_story_page(data, page_number)
         page = page.model_copy(update={"is_ending": True, "choices": []})
-        image_url = self._openai.generate_scene_image(
+        image_url = self._images.generate_scene_image(
             page.scene_description, story.options, story_id, page_number
         )
         return page.model_copy(update={"image_url": image_url})

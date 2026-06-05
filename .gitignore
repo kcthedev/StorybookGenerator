@@ -4,6 +4,8 @@ backend/__pycache__/
 backend/**/__pycache__/
 backend/.env
 backend/generated/
+backend/google_config.json
+backend/*-service-account.json
 *.pyc
 
 # Node

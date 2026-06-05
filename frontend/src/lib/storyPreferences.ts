@@ -1,12 +1,14 @@
 import {
   AUDIENCE_LABELS,
   CATEGORY_LABELS,
+  LLM_PROVIDER_LABELS,
   STORY_TYPE_LABELS,
   VISUAL_STYLE_LABELS,
 } from "@/lib/storyLabels";
 import type {
   Audience,
   Category,
+  LlmProvider,
   StoryOptions,
   StoryType,
   VisualStyle,
@@ -22,6 +24,7 @@ export const DEFAULT_STORY_PREFERENCES: SavedStoryPreferences = {
   story_type: "happy_ending",
   audience: "all_ages",
   character_name: "Alex",
+  llm_provider: "openai",
 };
 
 function isCategory(value: unknown): value is Category {
@@ -38,6 +41,10 @@ function isStoryType(value: unknown): value is StoryType {
 
 function isAudience(value: unknown): value is Audience {
   return typeof value === "string" && value in AUDIENCE_LABELS;
+}
+
+function isLlmProvider(value: unknown): value is LlmProvider {
+  return typeof value === "string" && value in LLM_PROVIDER_LABELS;
 }
 
 function parseSavedPreferences(data: unknown): SavedStoryPreferences {
@@ -64,6 +71,9 @@ function parseSavedPreferences(data: unknown): SavedStoryPreferences {
     audience: isAudience(record.audience)
       ? record.audience
       : DEFAULT_STORY_PREFERENCES.audience,
+    llm_provider: isLlmProvider(record.llm_provider)
+      ? record.llm_provider
+      : DEFAULT_STORY_PREFERENCES.llm_provider,
     character_name: characterName.slice(0, 50),
   };
 }

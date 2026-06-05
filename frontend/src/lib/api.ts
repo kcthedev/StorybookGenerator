@@ -1,4 +1,4 @@
-import type { StoryOptions, StoryState } from "@/types/story";
+import type { LlmProviderStatus, StoryOptions, StoryState } from "@/types/story";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -17,6 +17,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
   return res.json() as Promise<T>;
+}
+
+export async function getLlmProviders(): Promise<LlmProviderStatus[]> {
+  const data = await request<{ providers: LlmProviderStatus[] }>(
+    "/api/llm-providers",
+  );
+  return data.providers;
 }
 
 export async function createStory(

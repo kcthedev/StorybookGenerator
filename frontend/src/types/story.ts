@@ -44,6 +44,15 @@ export type StoryType =
 
 export type ReadingLayout = "split" | "vertical";
 
+export type LlmProvider = "openai" | "gemini";
+
+export interface LlmProviderStatus {
+  id: LlmProvider;
+  label: string;
+  configured: boolean;
+  available: boolean;
+}
+
 export interface StoryOptions {
   idea: string;
   category: Category;
@@ -51,6 +60,7 @@ export interface StoryOptions {
   story_type: StoryType;
   audience?: Audience;
   character_name: string;
+  llm_provider?: LlmProvider;
 }
 
 export interface ActionChoice {

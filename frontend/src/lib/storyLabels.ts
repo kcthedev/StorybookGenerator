@@ -1,4 +1,4 @@
-import type { Audience, Category, StoryType, VisualStyle } from "@/types/story";
+import type { Audience, Category, LlmProvider, StoryType, VisualStyle } from "@/types/story";
 
 export const AUDIENCE_LABELS: Record<Audience, string> = {
   all_ages: "All Ages",
@@ -65,4 +65,13 @@ export const VISUAL_STYLE_OPTIONS = Object.entries(VISUAL_STYLE_LABELS).map(
 
 export const STORY_TYPE_OPTIONS = Object.entries(STORY_TYPE_LABELS).map(
   ([value, label]) => ({ value: value as StoryType, label }),
+);
+
+export const LLM_PROVIDER_LABELS: Record<LlmProvider, string> = {
+  openai: "OpenAI",
+  gemini: "Google Gemini",
+};
+
+export const LLM_PROVIDER_OPTIONS = Object.entries(LLM_PROVIDER_LABELS).map(
+  ([value, label]) => ({ value: value as LlmProvider, label }),
 );
