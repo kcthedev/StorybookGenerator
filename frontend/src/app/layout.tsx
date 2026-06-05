@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Storybook Generator",
   description:
-    "AI-powered interactive storybook and picture book generator",
+    "AI-powered interactive story generator for readers of all ages",
 };
 
 export default function RootLayout({
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} min-h-full antialiased`}
     >
       <body className="storybook-bg min-h-full flex flex-col font-sans">
         {children}

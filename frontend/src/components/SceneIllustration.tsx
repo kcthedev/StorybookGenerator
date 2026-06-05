@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { VisualStyle } from "@/types/story";
 
 const styleGradients: Record<VisualStyle, string> = {
@@ -9,6 +9,14 @@ const styleGradients: Record<VisualStyle, string> = {
   pixel: "from-emerald-300 via-teal-400 to-cyan-500",
   realistic: "from-stone-300 via-zinc-400 to-slate-500",
   storybook: "from-yellow-100 via-amber-200 to-orange-300",
+  anime: "from-pink-200 via-fuchsia-300 to-purple-400",
+  claymation: "from-orange-200 via-amber-300 to-yellow-400",
+  crayon: "from-red-200 via-yellow-200 to-blue-300",
+  comic_book: "from-yellow-300 via-red-400 to-blue-500",
+  pastel: "from-rose-100 via-pink-200 to-sky-200",
+  chalk: "from-slate-600 via-slate-500 to-slate-400",
+  paper_cutout: "from-lime-200 via-amber-200 to-orange-200",
+  oil_painting: "from-amber-300 via-orange-400 to-red-500",
 };
 
 interface SceneIllustrationProps {
@@ -27,9 +35,14 @@ export function SceneIllustration({
   const gradient = styleGradients[visualStyle];
   const showImage = Boolean(imageUrl) && !failed;
 
+  useEffect(() => {
+    setLoaded(false);
+    setFailed(false);
+  }, [imageUrl]);
+
   return (
     <div
-      className="relative h-full min-h-[220px] w-full overflow-hidden rounded-2xl shadow-inner"
+      className="scene-illustration relative aspect-square w-full overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50/90 via-amber-100/40 to-amber-50/90 shadow-inner"
       role="img"
       aria-label={sceneDescription}
     >
@@ -44,7 +57,7 @@ export function SceneIllustration({
         <img
           src={imageUrl!}
           alt={sceneDescription}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+          className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-500 ${
             loaded ? "opacity-100" : "opacity-0"
           }`}
           onLoad={() => setLoaded(true)}

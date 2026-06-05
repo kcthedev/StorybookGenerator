@@ -1,7 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fff8f0;
+  --background: #fef3c7;
+  --background-soft: #fff8f0;
+  --background-warm: #fde68a;
   --foreground: #422006;
 }
 
@@ -12,19 +14,32 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  min-height: 100%;
+  background-color: var(--background);
+}
+
 body {
-  background: var(--background);
   color: var(--foreground);
 }
 
 .storybook-bg {
-  background: linear-gradient(
-    160deg,
-    #fff8f0 0%,
-    #fef3c7 40%,
-    #fde68a 100%
-  );
   min-height: 100vh;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse 90% 55% at 15% 0%, var(--background-soft) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 50% at 85% 100%, var(--background-warm) 0%, transparent 65%),
+    linear-gradient(
+      165deg,
+      var(--background-soft) 0%,
+      #fef9ee 28%,
+      var(--background) 52%,
+      #fdecc8 78%,
+      var(--background-warm) 100%
+    );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .select-field {
@@ -35,22 +50,112 @@ body {
   @apply gap-6;
 }
 
-.reader-split {
-  @apply grid lg:grid-cols-2 lg:items-stretch;
-}
-
-.reader-split .reader-image {
-  @apply min-h-[280px] lg:min-h-[420px];
-}
-
-.reader-vertical {
+/* Mobile: always stacked, centered image */
+.reader-mobile-stack {
   @apply flex flex-col;
 }
 
-.reader-vertical .reader-image {
-  @apply min-h-[220px];
+.reader-mobile-stack .reader-image {
+  @apply mx-auto w-full max-w-md sm:max-w-lg;
+}
+
+.reader-mobile-stack .reader-text {
+  @apply min-w-0;
+}
+
+/* Desktop side by side: equal-height columns, larger image */
+@media (min-width: 1024px) {
+  .lg\:reader-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: stretch;
+    gap: 2rem;
+    min-height: 32rem;
+  }
+
+  .lg\:reader-split .reader-image {
+    margin-inline: 0;
+    max-width: none;
+    height: 100%;
+    min-height: 32rem;
+  }
+
+  .lg\:reader-split .scene-illustration {
+    aspect-ratio: auto;
+    height: 100%;
+    min-height: 100%;
+  }
+
+  .lg\:reader-split .reader-text {
+    height: 100%;
+    min-height: 32rem;
+  }
+
+  .lg\:reader-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .lg\:reader-vertical .reader-image {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 42rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .lg\:reader-split {
+    min-height: 36rem;
+    gap: 2.5rem;
+  }
+
+  .lg\:reader-split .reader-image,
+  .lg\:reader-split .reader-text {
+    min-height: 36rem;
+  }
 }
 
 .nav-btn {
   @apply rounded-lg border border-amber-200 bg-white px-4 py-2 text-sm font-medium text-amber-900 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-40;
+}
+
+.reader-content-shell {
+  @apply relative transition-[opacity,transform] duration-300 ease-out;
+}
+
+.reader-content-shell.is-loading {
+  @apply pointer-events-none opacity-80;
+}
+
+.reader-content-shell.is-entering {
+  animation: reader-page-enter 320ms ease-out;
+}
+
+@keyframes reader-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reader-spinner {
+  display: block;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid #fde68a;
+  border-top-color: #d97706;
+  border-radius: 9999px;
+  animation: reader-spin 0.85s linear infinite;
+}
+
+@keyframes reader-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

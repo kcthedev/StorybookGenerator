@@ -6,7 +6,6 @@ from fastapi import HTTPException
 from app.models.story import (
     ActionChoice,
     CreateStoryRequest,
-    StoryOptions,
     StoryPage,
     StoryState,
     StorySummary,
@@ -67,9 +66,15 @@ class StoryService:
         next_page_num = len(story.pages) + 1
         if next_page_num > MAX_PAGES:
             story.pages.append(
-                self._build_ending_page(next_page_num, story.options, story_id)
+                self._build_ending_page(
+                    next_page_num,
+                    story,
+                    story_id,
+                    choice.label,
+                )
             )
             story.current_page = len(story.pages) - 1
+            self._stories[story_id] = story
             return story
 
         data = self._openai.generate_next_page(
@@ -104,20 +109,21 @@ class StoryService:
         return None
 
     def _build_ending_page(
-        self, page_number: int, options: StoryOptions, story_id: str
+        self,
+        page_number: int,
+        story: StoryState,
+        story_id: str,
+        last_choice_label: str,
     ) -> StoryPage:
-        scene_description = (
-            f"Happy ending scene with {options.character_name}, "
-            f"{options.visual_style.value} style, warm celebratory mood."
+        data = self._openai.generate_forced_ending(
+            options=story.options,
+            title=story.title,
+            pages=story.pages,
+            last_choice_label=last_choice_label,
         )
+        page = self._openai.to_story_page(data, page_number)
+        page = page.model_copy(update={"is_ending": True, "choices": []})
         image_url = self._openai.generate_scene_image(
-            scene_description, options, story_id, page_number
+            page.scene_description, story.options, story_id, page_number
         )
-        return StoryPage(
-            page_number=page_number,
-            text=f"{options.character_name} smiled—the adventure had come to a wonderful end.",
-            scene_description=scene_description,
-            image_url=image_url,
-            choices=[],
-            is_ending=True,
-        )
+        return page.model_copy(update={"image_url": image_url})

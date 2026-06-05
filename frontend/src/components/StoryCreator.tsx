@@ -1,39 +1,30 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { createStory } from "@/lib/api";
-import type { Category, StoryOptions, StoryType, VisualStyle } from "@/types/story";
-
-const categories: { value: Category; label: string }[] = [
-  { value: "fiction", label: "Fiction" },
-  { value: "adventure", label: "Adventure" },
-  { value: "comedy", label: "Comedy" },
-  { value: "fantasy", label: "Fantasy" },
-  { value: "educational", label: "Educational" },
-];
-
-const visualStyles: { value: VisualStyle; label: string }[] = [
-  { value: "cartoon", label: "Cartoon" },
-  { value: "watercolor", label: "Watercolor" },
-  { value: "pixel", label: "Pixel Art" },
-  { value: "realistic", label: "Realistic" },
-  { value: "storybook", label: "Classic Storybook" },
-];
-
-const storyTypes: { value: StoryType; label: string }[] = [
-  { value: "happy_ending", label: "Happy Ending" },
-  { value: "open_ending", label: "Open Ending" },
-  { value: "mystery", label: "Mystery" },
-  { value: "age_rated", label: "Age-Rated" },
-];
+import {
+  DEFAULT_STORY_PREFERENCES,
+  loadStoryPreferences,
+  saveStoryPreferences,
+} from "@/lib/storyPreferences";
+import {
+  AUDIENCE_OPTIONS,
+  CATEGORY_OPTIONS,
+  STORY_TYPE_OPTIONS,
+  VISUAL_STYLE_OPTIONS,
+} from "@/lib/storyLabels";
+import type {
+  Audience,
+  Category,
+  StoryOptions,
+  StoryType,
+  VisualStyle,
+} from "@/types/story";
 
 const defaultOptions: StoryOptions = {
   idea: "",
-  category: "adventure",
-  visual_style: "cartoon",
-  story_type: "happy_ending",
-  character_name: "Alex",
+  ...DEFAULT_STORY_PREFERENCES,
 };
 
 export function StoryCreator() {
@@ -41,6 +32,25 @@ export function StoryCreator() {
   const [options, setOptions] = useState<StoryOptions>(defaultOptions);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOptions((prev) => ({ ...prev, ...loadStoryPreferences() }));
+  }, []);
+
+  function updatePreferences(
+    patch: Partial<Omit<StoryOptions, "idea">>,
+  ) {
+    setOptions((prev) => {
+      const next = { ...prev, ...patch };
+      const { idea: _idea, ...preferences } = next;
+      saveStoryPreferences(preferences);
+      return next;
+    });
+  }
+
+  function updateIdea(idea: string) {
+    setOptions((prev) => ({ ...prev, idea }));
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -69,24 +79,24 @@ export function StoryCreator() {
           id="idea"
           required
           rows={3}
-          placeholder="A curious kid discovers a door to a cloud kingdom..."
+          placeholder="A detective follows a clue through a rain-soaked city, or a traveler opens a door to another world..."
           className="w-full rounded-xl border border-amber-200 bg-amber-50/50 px-4 py-3 text-amber-950 placeholder:text-amber-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300/50"
           value={options.idea}
-          onChange={(e) => setOptions({ ...options, idea: e.target.value })}
+          onChange={(e) => updateIdea(e.target.value)}
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Category" id="category">
+        <Field label="Genre" id="category">
           <select
             id="category"
             className="select-field"
             value={options.category}
             onChange={(e) =>
-              setOptions({ ...options, category: e.target.value as Category })
+              updatePreferences({ category: e.target.value as Category })
             }
           >
-            {categories.map((c) => (
+            {CATEGORY_OPTIONS.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.label}
               </option>
@@ -100,13 +110,12 @@ export function StoryCreator() {
             className="select-field"
             value={options.visual_style}
             onChange={(e) =>
-              setOptions({
-                ...options,
+              updatePreferences({
                 visual_style: e.target.value as VisualStyle,
               })
             }
           >
-            {visualStyles.map((s) => (
+            {VISUAL_STYLE_OPTIONS.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
               </option>
@@ -120,15 +129,33 @@ export function StoryCreator() {
             className="select-field"
             value={options.story_type}
             onChange={(e) =>
-              setOptions({
-                ...options,
+              updatePreferences({
                 story_type: e.target.value as StoryType,
               })
             }
           >
-            {storyTypes.map((t) => (
+            {STORY_TYPE_OPTIONS.map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Audience" id="audience">
+          <select
+            id="audience"
+            className="select-field"
+            value={options.audience}
+            onChange={(e) =>
+              updatePreferences({
+                audience: e.target.value as Audience,
+              })
+            }
+          >
+            {AUDIENCE_OPTIONS.map((a) => (
+              <option key={a.value} value={a.value}>
+                {a.label}
               </option>
             ))}
           </select>
@@ -142,7 +169,7 @@ export function StoryCreator() {
             className="select-field"
             value={options.character_name}
             onChange={(e) =>
-              setOptions({ ...options, character_name: e.target.value })
+              updatePreferences({ character_name: e.target.value })
             }
           />
         </Field>
@@ -159,7 +186,7 @@ export function StoryCreator() {
         disabled={loading}
         className="w-full rounded-xl bg-amber-500 px-6 py-3 font-semibold text-white shadow-md transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "Writing story & generating illustration…" : "Create storybook"}
+        {loading ? "Writing story & generating illustration…" : "Create story"}
       </button>
     </form>
   );

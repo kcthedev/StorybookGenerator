@@ -3,20 +3,44 @@ export type Category =
   | "adventure"
   | "comedy"
   | "fantasy"
-  | "educational";
+  | "educational"
+  | "sci_fi"
+  | "fairy_tale"
+  | "animal"
+  | "friendship"
+  | "bedtime"
+  | "superhero"
+  | "nature"
+  | "historical";
 
 export type VisualStyle =
   | "cartoon"
   | "watercolor"
   | "pixel"
   | "realistic"
-  | "storybook";
+  | "storybook"
+  | "anime"
+  | "claymation"
+  | "crayon"
+  | "comic_book"
+  | "pastel"
+  | "chalk"
+  | "paper_cutout"
+  | "oil_painting";
+
+export type Audience = "all_ages" | "teen" | "adult";
 
 export type StoryType =
   | "happy_ending"
   | "open_ending"
   | "mystery"
-  | "age_rated";
+  | "age_rated"
+  | "choose_your_own"
+  | "suspense"
+  | "inspiring"
+  | "quest"
+  | "surprise_twist"
+  | "bedtime_calm";
 
 export type ReadingLayout = "split" | "vertical";
 
@@ -25,6 +49,7 @@ export interface StoryOptions {
   category: Category;
   visual_style: VisualStyle;
   story_type: StoryType;
+  audience?: Audience;
   character_name: string;
 }
 
@@ -40,6 +65,7 @@ export interface StoryPage {
   image_url?: string | null;
   choices: ActionChoice[];
   is_ending: boolean;
+  recap?: string | null;
 }
 
 export interface StoryState {

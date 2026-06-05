@@ -8,11 +8,19 @@ from app.config import settings
 GENERATED_DIR = Path(__file__).resolve().parents[2] / "generated"
 
 STYLE_HINTS = {
-    "cartoon": "vibrant cartoon illustration, children's picture book, bold outlines",
+    "cartoon": "vibrant cartoon illustration, bold outlines, expressive characters",
     "watercolor": "soft watercolor painting, gentle washes, picture book art",
     "pixel": "charming 16-bit pixel art, retro game aesthetic, limited palette",
     "realistic": "detailed digital painting, warm lighting, storybook realism",
     "storybook": "classic hand-drawn storybook illustration, whimsical and cozy",
+    "anime": "anime-inspired illustration, expressive eyes, clean linework, soft shading",
+    "claymation": "claymation stop-motion look, sculpted clay figures, tactile textures",
+    "crayon": "hand-drawn crayon illustration, waxy strokes, playful imperfect lines",
+    "comic_book": "comic book panel art, ink outlines, halftone shading, dynamic poses",
+    "pastel": "soft pastel illustration, dreamy colors, gentle blended tones",
+    "chalk": "chalkboard chalk art, dusty texture, hand-drawn charm",
+    "paper_cutout": "layered paper cutout collage, craft paper textures, depth shadows",
+    "oil_painting": "oil painting illustration, rich brushstrokes, warm classical tones",
 }
 
 
@@ -29,7 +37,7 @@ class ImageService:
             f"Feature the main character {character_name}. "
             f"Style: {style_hint}. "
             "No text, no words, no letters in the image. "
-            "Safe for children, single scene composition."
+            "Single scene composition, appropriate for the story's tone."
         )
 
     def _dest_path(self, story_id: str, page_number: int) -> Path:

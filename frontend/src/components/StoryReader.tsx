@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { SceneIllustration } from "@/components/SceneIllustration";
+import { StoryEndingPanel, buildFallbackRecap } from "@/components/StoryEndingPanel";
+import { StoryPageLoader } from "@/components/StoryPageLoader";
 import { getStory, makeChoice, navigateToPage } from "@/lib/api";
 import type { ReadingLayout, StoryState } from "@/types/story";
 
@@ -10,120 +12,167 @@ interface StoryReaderProps {
   initialStory: StoryState;
 }
 
+type LoadingMode = "generating" | "navigating" | null;
+
 export function StoryReader({ initialStory }: StoryReaderProps) {
   const [story, setStory] = useState(initialStory);
   const [layout, setLayout] = useState<ReadingLayout>("split");
   const [loading, setLoading] = useState(false);
+  const [loadingMode, setLoadingMode] = useState<LoadingMode>(null);
+  const [pendingChoiceLabel, setPendingChoiceLabel] = useState<string | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
-  const [animating, setAnimating] = useState(false);
+  const [entering, setEntering] = useState(false);
 
   const page = story.pages[story.current_page];
   const canGoBack = story.current_page > 0;
   const canGoForward = story.current_page < story.pages.length - 1;
+  const isSplitLayout = layout === "split";
 
-  const refresh = useCallback(async (updater: () => Promise<StoryState>) => {
-    setLoading(true);
-    setError(null);
-    setAnimating(true);
-    try {
-      const updated = await updater();
-      setStory(updated);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setLoading(false);
-      setTimeout(() => setAnimating(false), 300);
-    }
-  }, []);
+  const refresh = useCallback(
+    async (
+      updater: () => Promise<StoryState>,
+      options?: { mode?: LoadingMode; choiceLabel?: string | null },
+    ) => {
+      const mode = options?.mode ?? "navigating";
+      setLoading(true);
+      setLoadingMode(mode);
+      setPendingChoiceLabel(options?.choiceLabel ?? null);
+      setError(null);
+      setEntering(false);
+
+      try {
+        const updated = await updater();
+        setStory(updated);
+        setEntering(true);
+        window.setTimeout(() => setEntering(false), 320);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong");
+      } finally {
+        setLoading(false);
+        setLoadingMode(null);
+        setPendingChoiceLabel(null);
+      }
+    },
+    [],
+  );
 
   async function handleChoice(choiceId: string) {
-    await refresh(() => makeChoice(story.id, choiceId));
+    const choice = page.choices.find((item) => item.choice_id === choiceId);
+    await refresh(() => makeChoice(story.id, choiceId), {
+      mode: "generating",
+      choiceLabel: choice?.label ?? null,
+    });
   }
 
   async function goToPage(index: number) {
-    await refresh(() => navigateToPage(story.id, index));
+    await refresh(() => navigateToPage(story.id, index), {
+      mode: "navigating",
+    });
   }
 
   async function reloadStory() {
-    await refresh(() => getStory(story.id));
+    await refresh(() => getStory(story.id), { mode: "navigating" });
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 xl:max-w-[88rem]">
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
           <Link
             href="/"
             className="text-sm font-medium text-amber-700 hover:text-amber-900"
           >
             ← New story
           </Link>
-          <h1 className="mt-1 text-2xl font-bold text-amber-950 md:text-3xl">
+          <h1 className="mt-1 text-xl font-bold text-amber-950 sm:text-2xl md:text-3xl">
             {story.title}
           </h1>
-          <p className="text-sm text-amber-700/80">
-            Page {page.page_number} of {story.pages.length}
-          </p>
+          {page.is_ending ? (
+            <p className="text-sm text-amber-700/80">
+              Story complete · {story.pages.length} pages
+            </p>
+          ) : (
+            <p className="text-sm text-amber-700/80">Page {page.page_number}</p>
+          )}
         </div>
-        <div className="flex gap-2">
+        <div className="hidden shrink-0 gap-2 lg:flex">
           <LayoutButton
-            active={layout === "split"}
+            active={isSplitLayout}
             onClick={() => setLayout("split")}
             label="Side by side"
           />
           <LayoutButton
-            active={layout === "vertical"}
+            active={!isSplitLayout}
             onClick={() => setLayout("vertical")}
             label="Stacked"
           />
         </div>
       </header>
 
-      <article
-        className={`reader-panel transition-opacity duration-300 ${
-          animating ? "opacity-0" : "opacity-100"
-        } ${layout === "split" ? "reader-split" : "reader-vertical"}`}
+      <div
+        className={`reader-content-shell ${
+          loading ? "is-loading" : ""
+        } ${entering ? "is-entering" : ""}`}
       >
-        <div className="reader-image">
-          <SceneIllustration
-            sceneDescription={page.scene_description}
-            visualStyle={story.options.visual_style}
-            imageUrl={page.image_url}
-          />
-        </div>
-        <div className="reader-text flex flex-col justify-between gap-6 rounded-2xl border border-amber-100 bg-white/90 p-6 shadow-sm">
-          <p className="text-lg leading-relaxed text-amber-950 md:text-xl">
-            {page.text}
-          </p>
-
-          {!page.is_ending && page.choices.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-sm font-semibold uppercase tracking-wide text-amber-800">
-                What does {story.options.character_name} do?
-              </p>
-              <div className="flex flex-col gap-2">
-                {page.choices.map((choice) => (
-                  <button
-                    key={choice.choice_id}
-                    type="button"
-                    disabled={loading}
-                    onClick={() => handleChoice(choice.choice_id)}
-                    className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left font-medium text-amber-900 transition hover:border-amber-400 hover:bg-amber-100 disabled:opacity-50"
-                  >
-                    {choice.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {page.is_ending && (
-            <p className="rounded-xl bg-amber-100 px-4 py-3 text-center font-semibold text-amber-900">
-              The End ✨
+        <article
+          className={`reader-panel ${
+            isSplitLayout
+              ? "reader-mobile-stack lg:reader-split"
+              : "reader-mobile-stack lg:reader-vertical"
+          }`}
+        >
+          <div className="reader-image">
+            <SceneIllustration
+              sceneDescription={page.scene_description}
+              visualStyle={story.options.visual_style}
+              imageUrl={page.image_url}
+            />
+          </div>
+          <div className="reader-text flex flex-col gap-6 rounded-2xl border border-amber-100 bg-white/90 p-5 shadow-sm sm:p-6 lg:h-full">
+            <p className="text-lg leading-relaxed text-amber-950 md:text-xl">
+              {page.text}
             </p>
-          )}
-        </div>
-      </article>
+
+            {!page.is_ending && page.choices.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-semibold uppercase tracking-wide text-amber-800">
+                  What happens next?
+                </p>
+                <div className="flex flex-col gap-2">
+                  {page.choices.map((choice) => (
+                    <button
+                      key={choice.choice_id}
+                      type="button"
+                      disabled={loading}
+                      onClick={() => handleChoice(choice.choice_id)}
+                      className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left font-medium text-amber-900 transition hover:border-amber-400 hover:bg-amber-100 disabled:opacity-50"
+                    >
+                      {choice.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {page.is_ending && (
+              <StoryEndingPanel
+                story={story}
+                recap={page.recap ?? buildFallbackRecap(story)}
+                onReadAgain={() => goToPage(0)}
+                loading={loading}
+              />
+            )}
+          </div>
+        </article>
+
+        <StoryPageLoader
+          active={loading}
+          choiceLabel={pendingChoiceLabel}
+          mode={loadingMode ?? "navigating"}
+        />
+      </div>
 
       <footer className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex gap-2">
@@ -135,14 +184,16 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
           >
             Previous
           </button>
-          <button
-            type="button"
-            disabled={!canGoForward || loading}
-            onClick={() => goToPage(story.current_page + 1)}
-            className="nav-btn"
-          >
-            Next
-          </button>
+          {!page.is_ending && (
+            <button
+              type="button"
+              disabled={!canGoForward || loading}
+              onClick={() => goToPage(story.current_page + 1)}
+              className="nav-btn"
+            >
+              Next
+            </button>
+          )}
         </div>
         <button
           type="button"

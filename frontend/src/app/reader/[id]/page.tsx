@@ -12,7 +12,7 @@ export default async function ReaderPage({ params }: ReaderPageProps) {
   try {
     const story = await getStory(id);
     return (
-      <main className="flex flex-1 flex-col px-4 py-8 md:py-12">
+      <main className="flex flex-1 flex-col px-4 py-8 md:px-6 md:py-12 lg:px-8">
         <StoryReader initialStory={story} />
       </main>
     );
