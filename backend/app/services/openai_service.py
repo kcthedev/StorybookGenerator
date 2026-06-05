@@ -49,16 +49,20 @@ class OpenAIService(StoryTextService):
                 ordered.append(model)
         return ordered
 
-    def _image_generate_kwargs(self, model: str, prompt: str) -> dict[str, Any]:
+    def _image_generate_kwargs(
+        self, model: str, prompt: str, visual_style: str | None = None
+    ) -> dict[str, Any]:
         kwargs: dict[str, Any] = {"model": model, "prompt": prompt, "n": 1}
         if model.startswith("gpt-image"):
+            quality = "high" if visual_style == "realistic" else "medium"
             kwargs.update(
                 size="1024x1024",
-                quality="medium",
+                quality=quality,
                 output_format="png",
             )
         elif model == "dall-e-3":
-            kwargs.update(size="1024x1024", quality="standard")
+            quality = "hd" if visual_style == "realistic" else "standard"
+            kwargs.update(size="1024x1024", quality=quality)
         else:
             kwargs.update(size="1024x1024")
         return kwargs
@@ -92,7 +96,9 @@ class OpenAIService(StoryTextService):
         for model in self._image_models_to_try():
             try:
                 response = self._client.images.generate(
-                    **self._image_generate_kwargs(model, prompt)
+                    **self._image_generate_kwargs(
+                        model, prompt, options.visual_style.value
+                    )
                 )
                 saved = self._persist_generated_image(response.data, story_id, page_number)
                 if saved:

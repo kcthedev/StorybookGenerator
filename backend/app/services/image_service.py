@@ -11,7 +11,11 @@ STYLE_HINTS = {
     "cartoon": "vibrant cartoon illustration, bold outlines, expressive characters",
     "watercolor": "soft watercolor painting, gentle washes, picture book art",
     "pixel": "charming 16-bit pixel art, retro game aesthetic, limited palette",
-    "realistic": "detailed digital painting, warm lighting, storybook realism",
+    "realistic": (
+        "photorealistic digital art, lifelike human proportions, natural skin textures, "
+        "cinematic lighting, shallow depth of field, highly detailed environment, "
+        "NOT cartoon, NOT anime, NOT illustration, NOT painting"
+    ),
     "storybook": "classic hand-drawn storybook illustration, whimsical and cozy",
     "anime": "anime-inspired illustration, expressive eyes, clean linework, soft shading",
     "claymation": "claymation stop-motion look, sculpted clay figures, tactile textures",
@@ -21,6 +25,26 @@ STYLE_HINTS = {
     "chalk": "chalkboard chalk art, dusty texture, hand-drawn charm",
     "paper_cutout": "layered paper cutout collage, craft paper textures, depth shadows",
     "oil_painting": "oil painting illustration, rich brushstrokes, warm classical tones",
+}
+
+
+SCENE_DESCRIPTION_GUIDANCE = {
+    "cartoon": "Describe a scene suited to vibrant cartoon illustration.",
+    "watercolor": "Describe a scene suited to soft watercolor picture-book art.",
+    "pixel": "Describe a scene suited to pixel art.",
+    "realistic": (
+        "Describe a photorealistic scene as if for a cinematic still or photograph. "
+        "Do NOT mention cartoon, anime, illustration, drawing, or painting."
+    ),
+    "storybook": "Describe a scene suited to classic hand-drawn storybook art.",
+    "anime": "Describe a scene suited to anime-style illustration.",
+    "claymation": "Describe a scene suited to claymation stop-motion.",
+    "crayon": "Describe a scene suited to crayon children's art.",
+    "comic_book": "Describe a scene suited to comic book panel art.",
+    "pastel": "Describe a scene suited to soft pastel illustration.",
+    "chalk": "Describe a scene suited to chalkboard art.",
+    "paper_cutout": "Describe a scene suited to paper cutout collage.",
+    "oil_painting": "Describe a scene suited to oil painting illustration.",
 }
 
 
@@ -35,9 +59,15 @@ class ImageService:
         return (
             f"{scene_description}. "
             f"Feature the main character {character_name}. "
-            f"Style: {style_hint}. "
+            f"Art style (strict): {style_hint}. "
             "No text, no words, no letters in the image. "
             "Single scene composition, appropriate for the story's tone."
+        )
+
+    def scene_guidance_for_llm(self, visual_style: str) -> str:
+        return SCENE_DESCRIPTION_GUIDANCE.get(
+            visual_style,
+            SCENE_DESCRIPTION_GUIDANCE["storybook"],
         )
 
     def _dest_path(self, story_id: str, page_number: int) -> Path:

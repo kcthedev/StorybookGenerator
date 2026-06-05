@@ -1,12 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { BackgroundMusic } from "@/components/BackgroundMusic";
 import { SceneIllustration } from "@/components/SceneIllustration";
 import { StoryEndingPanel, buildFallbackRecap } from "@/components/StoryEndingPanel";
+import { StoryNarration } from "@/components/StoryNarration";
 import { StoryPageLoader } from "@/components/StoryPageLoader";
-import { getStory, makeChoice, navigateToPage } from "@/lib/api";
-import type { ReadingLayout, StoryState } from "@/types/story";
+import { VoiceSelector } from "@/components/VoiceSelector";
+import {
+  getStory,
+  getTtsVoices,
+  makeChoice,
+  navigateToPage,
+  updateStoryVoice,
+} from "@/lib/api";
+import { BASE_TTS_VOICES, filterVoicesForLlm, mergeTtsVoices, resolveVoiceForLlm } from "@/lib/audioOptions";
+import type { ReadingLayout, StoryState, VoiceOption } from "@/types/story";
 
 interface StoryReaderProps {
   initialStory: StoryState;
@@ -16,8 +26,11 @@ type LoadingMode = "generating" | "navigating" | null;
 
 export function StoryReader({ initialStory }: StoryReaderProps) {
   const [story, setStory] = useState(initialStory);
+  const [voices, setVoices] = useState<VoiceOption[]>(BASE_TTS_VOICES);
+  const [voicesLoading, setVoicesLoading] = useState(true);
   const [layout, setLayout] = useState<ReadingLayout>("split");
   const [loading, setLoading] = useState(false);
+  const [voiceLoading, setVoiceLoading] = useState(false);
   const [loadingMode, setLoadingMode] = useState<LoadingMode>(null);
   const [pendingChoiceLabel, setPendingChoiceLabel] = useState<string | null>(
     null,
@@ -29,6 +42,20 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
   const canGoBack = story.current_page > 0;
   const canGoForward = story.current_page < story.pages.length - 1;
   const isSplitLayout = layout === "split";
+  const llmProvider = story.options.llm_provider ?? "openai";
+  const voiceOptions = filterVoicesForLlm(voices, llmProvider);
+  const selectedVoiceId = resolveVoiceForLlm(
+    story.options.voice_id,
+    llmProvider,
+    voices,
+  );
+
+  useEffect(() => {
+    getTtsVoices()
+      .then((data) => setVoices(mergeTtsVoices(data.voices)))
+      .catch(() => setVoices(BASE_TTS_VOICES))
+      .finally(() => setVoicesLoading(false));
+  }, []);
 
   const refresh = useCallback(
     async (
@@ -76,6 +103,19 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
     await refresh(() => getStory(story.id), { mode: "navigating" });
   }
 
+  async function handleVoiceChange(voiceId: string) {
+    setVoiceLoading(true);
+    setError(null);
+    try {
+      const updated = await updateStoryVoice(story.id, voiceId);
+      setStory(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update voice");
+    } finally {
+      setVoiceLoading(false);
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 xl:max-w-[88rem]">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -111,6 +151,16 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
         </div>
       </header>
 
+      <BackgroundMusic story={story} onStoryUpdate={setStory} />
+
+      <VoiceSelector
+        voices={voiceOptions}
+        selectedVoiceId={selectedVoiceId}
+        loading={voiceLoading}
+        voicesLoading={voicesLoading}
+        onChange={handleVoiceChange}
+      />
+
       <div
         className={`reader-content-shell ${
           loading ? "is-loading" : ""
@@ -131,6 +181,13 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
             />
           </div>
           <div className="reader-text flex flex-col gap-6 rounded-2xl border border-amber-100 bg-white/90 p-5 shadow-sm sm:p-6 lg:h-full">
+            <StoryNarration
+              story={story}
+              pageIndex={story.current_page}
+              onStoryUpdate={setStory}
+              disabled={loading || voiceLoading}
+            />
+
             <p className="text-lg leading-relaxed text-amber-950 md:text-xl">
               {page.text}
             </p>

@@ -6,6 +6,7 @@ const GENERATING_MESSAGES = [
   "Writing the next page…",
   "Shaping the story…",
   "Painting the scene…",
+  "Recording narration…",
   "Almost there…",
 ];
 
@@ -68,7 +69,7 @@ export function StoryPageLoader({
 
         <p className="mt-4 text-xs text-amber-600/90">
           {mode === "generating"
-            ? "New story text and illustration are being created."
+            ? "New story text, illustration, and narration are being created."
             : "Fetching this page from your story."}
         </p>
       </div>

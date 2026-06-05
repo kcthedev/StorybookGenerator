@@ -58,6 +58,10 @@ Edit `.env` and set `OPENAI_API_KEY` (and other values if needed). See `.env.exa
 | `GEMINI_LOCATION` | Vertex AI region (default `us-central1`) |
 | `GEMINI_MODEL` | Gemini text model (default `gemini-2.5-flash`) |
 | `GEMINI_SERVICE_ACCOUNT_FILE` | Path to the service account JSON (default `google_config.json`) |
+| `OPENAI_TTS_MODEL` | Narration voice model (default `gpt-4o-mini-tts`) |
+| `GEMINI_TTS_MODEL` | Gemini narration model (default `gemini-2.5-flash-tts`) |
+| `LYRIA_MODEL` | Background music model (default `lyria-3-clip-preview`) |
+| `LYRIA_LOCATION` | Vertex region for Lyria (default `us-central1`) |
 | `CORS_ORIGINS` | Allowed frontend origin(s) (default `http://localhost:3000`) |
 | `API_PUBLIC_URL` | Base URL for generated image links (default `http://localhost:8000`) |
 
@@ -100,6 +104,27 @@ Check which LLM providers are ready:
 curl http://localhost:8000/api/llm-providers
 ```
 
+### Narration and background music
+
+When a reader opens a page, the frontend requests narration audio for that page. The narration style follows the story's genre, story type, and audience.
+
+**TTS provider order:** the selected voice's provider is tried first, then OpenAI and Gemini as fallbacks.
+
+- **OpenAI** — `OPENAI_API_KEY` + `OPENAI_TTS_MODEL`
+- **Gemini** — same Vertex AI service account as story text
+
+On page 1, readers can choose a narrator voice. Each voice includes a short description in the UI.
+
+**Background music** is only available when **Gemini** is selected as the story writer. Music is generated in **`us-central1`** (`LYRIA_LOCATION`) using **Lyria 2** (`lyria-002`) via the Vertex `predict` API, with optional Lyria 3 via the Interactions API when preview access is granted. The working route is cached for later stories.
+
+If music still fails, check that the service account has the *Vertex AI User* role and that the Vertex AI API is enabled for the project in `google_config.json`.
+
+List available narrator voices:
+
+```bash
+curl http://localhost:8000/api/tts/voices
+```
+
 ## Run
 
 Activate the virtual environment in each new terminal session, then start the server.
@@ -135,11 +160,15 @@ curl http://localhost:8000/health
 |--------|------|-------------|
 | GET | `/health` | Health check |
 | GET | `/api/llm-providers` | List configured LLM providers (OpenAI, Gemini) |
+| GET | `/api/tts/voices` | List narrator voices and availability |
 | GET | `/api/stories` | List stories |
 | POST | `/api/stories` | Create story (first page) |
 | GET | `/api/stories/{id}` | Get story state |
 | POST | `/api/stories/{id}/choice` | Branch via character action |
 | POST | `/api/stories/{id}/navigate/{page}` | Go to a previous page |
+| POST | `/api/stories/{id}/voice` | Change narrator voice and refresh current page audio |
+| POST | `/api/stories/{id}/pages/{page}/narration` | Generate or fetch page narration |
+| POST | `/api/stories/{id}/music` | Generate looping background music |
 
 Without `OPENAI_API_KEY`, the API returns mock story text and placeholder images. Gemini requires a valid service account file; if it is missing, Gemini appears as unavailable in `/api/llm-providers`.
 

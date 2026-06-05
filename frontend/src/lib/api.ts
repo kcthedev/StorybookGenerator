@@ -1,4 +1,4 @@
-import type { LlmProviderStatus, StoryOptions, StoryState } from "@/types/story";
+import type { LlmProviderStatus, StoryOptions, StoryState, VoiceOption } from "@/types/story";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -24,6 +24,50 @@ export async function getLlmProviders(): Promise<LlmProviderStatus[]> {
     "/api/llm-providers",
   );
   return data.providers;
+}
+
+export async function getTtsVoices(): Promise<{
+  voices: VoiceOption[];
+  default_voice_id: string;
+}> {
+  return request("/api/tts/voices");
+}
+
+export async function updateStoryVoice(
+  storyId: string,
+  voiceId: string,
+): Promise<StoryState> {
+  const data = await request<{ story: StoryState }>(
+    `/api/stories/${storyId}/voice`,
+    {
+      method: "POST",
+      body: JSON.stringify({ voice_id: voiceId }),
+    },
+  );
+  return data.story;
+}
+
+export async function ensureNarration(
+  storyId: string,
+  pageIndex: number,
+  force = false,
+): Promise<StoryState> {
+  const query = force ? "?force=true" : "";
+  const data = await request<{ story: StoryState }>(
+    `/api/stories/${storyId}/pages/${pageIndex}/narration${query}`,
+    { method: "POST" },
+  );
+  return data.story;
+}
+
+export async function ensureBackgroundMusic(
+  storyId: string,
+): Promise<StoryState> {
+  const data = await request<{ story: StoryState }>(
+    `/api/stories/${storyId}/music`,
+    { method: "POST" },
+  );
+  return data.story;
 }
 
 export async function createStory(

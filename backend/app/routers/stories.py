@@ -8,10 +8,9 @@ from app.models.story import (
     StoryState,
     StorySummary,
 )
-from app.services.story_service import StoryService
+from app.services.story_service import story_service
 
 router = APIRouter(prefix="/api/stories", tags=["stories"])
-story_service = StoryService()
 
 
 @router.get("", response_model=list[StorySummary])

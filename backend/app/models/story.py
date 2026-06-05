@@ -65,6 +65,12 @@ class LlmProvider(str, Enum):
     GEMINI = "gemini"
 
 
+class TtsProvider(str, Enum):
+    NONE = "none"
+    OPENAI = "openai"
+    GEMINI = "gemini"
+
+
 LLM_PROVIDER_LABELS = {
     LlmProvider.OPENAI: "OpenAI",
     LlmProvider.GEMINI: "Google Gemini",
@@ -79,6 +85,8 @@ class StoryOptions(BaseModel):
     audience: Audience = Audience.ALL_AGES
     character_name: str = Field(default="Alex", min_length=1, max_length=50)
     llm_provider: LlmProvider = LlmProvider.OPENAI
+    voice_id: str = "openai:coral"
+    music_enabled: bool = False
 
 
 class ActionChoice(BaseModel):
@@ -91,6 +99,7 @@ class StoryPage(BaseModel):
     text: str
     scene_description: str
     image_url: Optional[str] = None
+    audio_url: Optional[str] = None
     choices: list[ActionChoice] = Field(default_factory=list)
     is_ending: bool = False
     recap: Optional[str] = None
@@ -102,6 +111,8 @@ class StoryState(BaseModel):
     options: StoryOptions
     pages: list[StoryPage]
     current_page: int = 0
+    background_music_url: Optional[str] = None
+    background_music_unavailable: bool = False
 
 
 class CreateStoryRequest(StoryOptions):
@@ -137,3 +148,25 @@ class LlmProviderStatus(BaseModel):
 
 class LlmProvidersResponse(BaseModel):
     providers: list[LlmProviderStatus]
+
+
+class VoiceOptionResponse(BaseModel):
+    id: str
+    provider: TtsProvider
+    label: str
+    description: str
+    available: bool
+
+
+class VoicesResponse(BaseModel):
+    voices: list[VoiceOptionResponse]
+    default_voice_id: str
+
+
+class UpdateVoiceRequest(BaseModel):
+    voice_id: str = Field(..., min_length=3, max_length=80)
+
+
+class NarrationResponse(BaseModel):
+    story: StoryState
+    page_index: int

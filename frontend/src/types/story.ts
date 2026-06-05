@@ -46,6 +46,22 @@ export type ReadingLayout = "split" | "vertical";
 
 export type LlmProvider = "openai" | "gemini";
 
+export type TtsProvider = "none" | "openai" | "gemini";
+
+export const NO_VOICE_ID = "none";
+
+export function isVoiceDisabled(voiceId?: string | null): boolean {
+  return voiceId === NO_VOICE_ID;
+}
+
+export interface VoiceOption {
+  id: string;
+  provider: TtsProvider;
+  label: string;
+  description: string;
+  available: boolean;
+}
+
 export interface LlmProviderStatus {
   id: LlmProvider;
   label: string;
@@ -61,6 +77,9 @@ export interface StoryOptions {
   audience?: Audience;
   character_name: string;
   llm_provider?: LlmProvider;
+  voice_id?: string;
+  music_enabled?: boolean;
+  music_volume?: number;
 }
 
 export interface ActionChoice {
@@ -73,6 +92,7 @@ export interface StoryPage {
   text: string;
   scene_description: string;
   image_url?: string | null;
+  audio_url?: string | null;
   choices: ActionChoice[];
   is_ending: boolean;
   recap?: string | null;
@@ -84,4 +104,6 @@ export interface StoryState {
   options: StoryOptions;
   pages: StoryPage[];
   current_page: number;
+  background_music_url?: string | null;
+  background_music_unavailable?: boolean;
 }

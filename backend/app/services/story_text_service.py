@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from app.models.story import ActionChoice, Audience, StoryOptions, StoryPage
+from app.services.image_service import ImageService
 
 CHOICE_SCHEMA_HINT = (
     'Each choice MUST be {"choice_id": "short_snake_case_id", "label": "What the character does"}. '
@@ -44,12 +45,25 @@ class StoryTextService(ABC):
     def _chat(self, system: str, user: str) -> dict[str, Any]:
         raise NotImplementedError
 
+    def _visual_style_from_user(self, user: str) -> str:
+        match = re.search(r"visual style:\s*([a-z_]+)", user, re.I)
+        return match.group(1).lower() if match else "storybook"
+
+    def _mock_scene(self, scene: str, user: str) -> str:
+        style = self._visual_style_from_user(user)
+        if style == "realistic":
+            return f"{scene}, photorealistic, natural lighting, cinematic still."
+        return f"{scene}, {style.replace('_', ' ')} style."
+
     def _mock_response(self, user: str) -> dict[str, Any]:
         if "first page" in user.lower() or "page 1" in user.lower():
             return {
                 "title": "The Curious Adventure",
                 "text": "Alex stood at the edge of a glowing forest, heart pounding with wonder and possibility.",
-                "scene_description": "An explorer at a luminous forest entrance, cartoon style, warm sunset light.",
+                "scene_description": self._mock_scene(
+                    "An explorer at a luminous forest entrance, warm sunset light",
+                    user,
+                ),
                 "choices": [
                     {"choice_id": "enter", "label": "Step into the forest"},
                     {"choice_id": "call", "label": "Call out for a friend"},
@@ -62,9 +76,9 @@ class StoryTextService(ABC):
                     "Alex took a deep breath and smiled—the forest had shared its greatest secret, "
                     "and the adventure would live forever in their heart."
                 ),
-                "scene_description": (
-                    "A joyful explorer beneath golden sunset light in a magical forest, "
-                    "cartoon style, celebratory mood."
+                "scene_description": self._mock_scene(
+                    "A joyful explorer beneath golden sunset light in a magical forest, celebratory mood",
+                    user,
                 ),
                 "recap": (
                     "From the glowing forest entrance to the hidden path of sparkling stones, "
@@ -74,7 +88,10 @@ class StoryTextService(ABC):
             }
         return {
             "text": "Alex pressed forward, discovering a hidden path lined with sparkling stones.",
-            "scene_description": "A winding forest path with glowing pebbles, cartoon style, magical atmosphere.",
+            "scene_description": self._mock_scene(
+                "A winding forest path with glowing pebbles, magical atmosphere",
+                user,
+            ),
             "choices": [
                 {"choice_id": "follow", "label": "Follow the glowing path"},
                 {"choice_id": "rest", "label": "Rest and listen to the woods"},
@@ -136,12 +153,16 @@ class StoryTextService(ABC):
             options.audience, AUDIENCE_GUIDANCE[Audience.ALL_AGES]
         )
 
+    def _scene_guidance(self, options: StoryOptions) -> str:
+        return ImageService().scene_guidance_for_llm(options.visual_style.value)
+
     def generate_first_page(self, options: StoryOptions) -> dict[str, Any]:
         system = (
             f"{WRITER_SYSTEM} "
             "Return valid JSON only with keys: title, text, scene_description, choices, is_ending. "
             f"choices is an array of 2-3 objects. {CHOICE_SCHEMA_HINT} "
-            "scene_description is a short image prompt for the page illustration."
+            "scene_description is a short image prompt for the page illustration only "
+            "(describe the scene, not the art medium unless it matches the visual style)."
         )
         user = (
             f"Write page 1 of an interactive story.\n"
@@ -151,6 +172,7 @@ class StoryTextService(ABC):
             f"Story type: {options.story_type.value}\n"
             f"Main character: {options.character_name}\n"
             f"{self._audience_guidance(options)}\n"
+            f"{self._scene_guidance(options)}\n"
             f"Keep text 2-4 sentences, vivid and engaging."
         )
         return self._chat(system, user)
@@ -167,6 +189,7 @@ class StoryTextService(ABC):
             f"{WRITER_SYSTEM} "
             "Return valid JSON only with keys: text, scene_description, choices, is_ending, recap. "
             f"choices is an array of 2-3 objects. {CHOICE_SCHEMA_HINT} "
+            "scene_description must match the visual style (describe the scene, not conflicting art mediums). "
             "If this should be the final page (page >= max), set is_ending true and choices to []. "
             "When is_ending is true, include recap: a thoughtful 2-4 sentence summary of the whole "
             "story celebrating what the reader and character experienced together."
@@ -178,6 +201,7 @@ class StoryTextService(ABC):
             f"Genre: {options.category.value}, style: {options.visual_style.value}, "
             f"type: {options.story_type.value}, character: {options.character_name}.\n"
             f"{self._audience_guidance(options)}\n"
+            f"{self._scene_guidance(options)}\n"
             f"Provide 2-3 choices unless is_ending is true."
         )
         return self._chat(system, user)
@@ -194,7 +218,7 @@ class StoryTextService(ABC):
             f"{WRITER_SYSTEM} "
             "Return valid JSON only with keys: text, scene_description, recap. "
             "text is a satisfying final page (2-4 sentences) that concludes the story. "
-            "scene_description is a short image prompt for an ending illustration. "
+            "scene_description is a short image prompt for an ending illustration that matches the visual style. "
             "recap is a thoughtful 2-4 sentence summary of the whole story, "
             "highlighting the reader's choices and the character's journey."
         )
@@ -203,8 +227,10 @@ class StoryTextService(ABC):
             f"Title: {title}\n"
             f"Character: {options.character_name}\n"
             f"Genre: {options.category.value}, story type: {options.story_type.value}\n"
+            f"Visual style: {options.visual_style.value}\n"
             f"Reader's last choice: {last_choice_label}\n"
             f"{self._audience_guidance(options)}\n"
+            f"{self._scene_guidance(options)}\n"
             f"Story so far:\n{journey}\n"
             f"End the story in a way that fits the {options.story_type.value} story type."
         )

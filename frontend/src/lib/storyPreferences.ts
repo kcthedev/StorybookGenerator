@@ -25,6 +25,9 @@ export const DEFAULT_STORY_PREFERENCES: SavedStoryPreferences = {
   audience: "all_ages",
   character_name: "Alex",
   llm_provider: "openai",
+  voice_id: "openai:coral",
+  music_enabled: false,
+  music_volume: 0.22,
 };
 
 function isCategory(value: unknown): value is Category {
@@ -74,6 +77,20 @@ function parseSavedPreferences(data: unknown): SavedStoryPreferences {
     llm_provider: isLlmProvider(record.llm_provider)
       ? record.llm_provider
       : DEFAULT_STORY_PREFERENCES.llm_provider,
+    voice_id:
+      typeof record.voice_id === "string" && record.voice_id.trim()
+        ? record.voice_id.trim()
+        : DEFAULT_STORY_PREFERENCES.voice_id,
+    music_enabled:
+      typeof record.music_enabled === "boolean"
+        ? record.music_enabled
+        : DEFAULT_STORY_PREFERENCES.music_enabled,
+    music_volume:
+      typeof record.music_volume === "number" &&
+      record.music_volume >= 0 &&
+      record.music_volume <= 1
+        ? record.music_volume
+        : DEFAULT_STORY_PREFERENCES.music_volume,
     character_name: characterName.slice(0, 50),
   };
 }

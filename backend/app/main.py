@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.routers import llm, stories
+from app.routers import audio, llm, stories
 from app.services.image_service import GENERATED_DIR
 
 app = FastAPI(
@@ -22,6 +22,7 @@ app.add_middleware(
 
 app.include_router(stories.router)
 app.include_router(llm.router)
+app.include_router(audio.router)
 
 GENERATED_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/generated", StaticFiles(directory=str(GENERATED_DIR)), name="generated")
