@@ -10,26 +10,12 @@ Python FastAPI service for AI-powered interactive story generation.
 - **macOS / Linux:** `python3` on your PATH (install via [Homebrew](https://brew.sh) with `brew install python@3.12` if needed)
 - **Windows:** `python` on your PATH from [python.org](https://www.python.org/downloads/) or the Microsoft Store
 
-Check your version:
-
-```bash
-python3 --version   # macOS / Linux
-python --version    # Windows
-```
-
 ## Setup
-
-From the repository root:
-
-```bash
-cd backend
-```
-
-Create a virtual environment (use `python3` on macOS/Linux if `python` is not available):
 
 **macOS / Linux**
 
 ```bash
+cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -37,14 +23,44 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-**Windows (PowerShell or CMD)**
+**Windows**
 
 ```bash
+cd backend
 python -m venv .venv
 .venv\Scripts\activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 copy .env.example .env
+```
+
+## Quick Start
+
+Activate the virtual environment in each new terminal session, then start the server.
+
+**macOS / Linux**
+
+```bash
+cd backend
+source .venv/bin/activate
+uvicorn app.main:app --reload --port 8000
+```
+
+**Windows**
+
+```bash
+cd backend
+.venv\Scripts\activate
+uvicorn app.main:app --reload --port 8000
+```
+
+- Health check: http://localhost:8000/health
+- API docs: http://localhost:8000/docs
+
+Quick verify (macOS / Linux):
+
+```bash
+curl http://localhost:8000/health
 ```
 
 Edit `.env` and set `OPENAI_API_KEY` (and other values if needed). See `.env.example` for all options.
@@ -123,35 +139,6 @@ List available narrator voices:
 
 ```bash
 curl http://localhost:8000/api/tts/voices
-```
-
-## Run
-
-Activate the virtual environment in each new terminal session, then start the server.
-
-**macOS / Linux**
-
-```bash
-cd backend
-source .venv/bin/activate
-uvicorn app.main:app --reload --port 8000
-```
-
-**Windows**
-
-```bash
-cd backend
-.venv\Scripts\activate
-uvicorn app.main:app --reload --port 8000
-```
-
-- Health check: http://localhost:8000/health
-- API docs: http://localhost:8000/docs
-
-Quick verify (macOS / Linux):
-
-```bash
-curl http://localhost:8000/health
 ```
 
 ## Endpoints
