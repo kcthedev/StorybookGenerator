@@ -10,17 +10,13 @@ storybook-generator/
 └── frontend/         # React + Next.js (UI, reader layouts)
 ```
 
-## Quick start
+## Quick Start
 
 ### 1. Backend
 
 ```bash
 cd backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-copy .env.example .env
-# Set OPENAI_API_KEY in .env (required for real story text + DALL·E images)
+source .venv/bin/activate
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -28,8 +24,6 @@ uvicorn app.main:app --reload --port 8000
 
 ```bash
 cd frontend
-npm install
-copy .env.local.example .env.local
 npm run dev
 ```
 
