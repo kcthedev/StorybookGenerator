@@ -21,6 +21,8 @@ const STORY_HINTS = [
   "A comet passes overhead and everyone in town wakes up with swapped memories...",
 ] as const;
 
+export const DEFAULT_STORY_HINT = STORY_HINTS[0];
+
 export function getRandomStoryHint(): string {
   const index = Math.floor(Math.random() * STORY_HINTS.length);
   return STORY_HINTS[index];

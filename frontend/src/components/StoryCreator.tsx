@@ -16,7 +16,7 @@ import {
   VISUAL_STYLE_OPTIONS,
 } from "@/lib/storyLabels";
 import { BASE_LLM_PROVIDERS, BASE_TTS_VOICES, filterVoicesForLlm, mergeLlmProviders, mergeTtsVoices, resolveVoiceForLlm } from "@/lib/audioOptions";
-import { getRandomStoryHint } from "@/lib/storyHints";
+import { DEFAULT_STORY_HINT, getRandomStoryHint } from "@/lib/storyHints";
 import type {
   Audience,
   Genre,
@@ -42,7 +42,7 @@ export function StoryCreator() {
   const [voicesLoading, setVoicesLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [storyHint] = useState(getRandomStoryHint);
+  const [storyHint, setStoryHint] = useState<string>(DEFAULT_STORY_HINT);
 
   const llmProvider = options.llm_provider ?? "openai";
   const filteredVoices = filterVoicesForLlm(voices, llmProvider);
@@ -51,6 +51,10 @@ export function StoryCreator() {
     llmProvider,
     voices,
   );
+
+  useEffect(() => {
+    setStoryHint(getRandomStoryHint());
+  }, []);
 
   useEffect(() => {
     const saved = loadStoryPreferences();
