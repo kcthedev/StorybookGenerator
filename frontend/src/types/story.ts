@@ -1,17 +1,11 @@
-export type Category =
-  | "fiction"
+export type Genre =
   | "adventure"
   | "comedy"
   | "fantasy"
-  | "educational"
-  | "sci_fi"
   | "fairy_tale"
-  | "animal"
-  | "friendship"
-  | "bedtime"
-  | "superhero"
-  | "nature"
-  | "historical";
+  | "fiction"
+  | "sci_fi"
+  | "superhero";
 
 export type ArtStyle =
   | "anime"
@@ -65,7 +59,7 @@ export interface LlmProviderStatus {
 
 export interface StoryOptions {
   idea: string;
-  category: Category;
+  category: Genre;
   visual_style: ArtStyle;
   story_type: StoryType;
   audience?: Audience;

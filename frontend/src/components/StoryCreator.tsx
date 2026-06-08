@@ -18,7 +18,7 @@ import {
 import { BASE_LLM_PROVIDERS, BASE_TTS_VOICES, filterVoicesForLlm, mergeLlmProviders, mergeTtsVoices, resolveVoiceForLlm } from "@/lib/audioOptions";
 import type {
   Audience,
-  Category,
+  Genre,
   LlmProvider,
   LlmProviderStatus,
   StoryOptions,
@@ -159,7 +159,7 @@ export function StoryCreator() {
             className="select-field"
             value={options.category}
             onChange={(e) =>
-              updatePreferences({ category: e.target.value as Category })
+              updatePreferences({ category: e.target.value as Genre })
             }
           >
             {CATEGORY_OPTIONS.map((c) => (

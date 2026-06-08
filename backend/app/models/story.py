@@ -3,21 +3,14 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-class Category(str, Enum):
-    FICTION = "fiction"
+class Genre(str, Enum):
     ADVENTURE = "adventure"
     COMEDY = "comedy"
     FANTASY = "fantasy"
-    EDUCATIONAL = "educational"
-    SCI_FI = "sci_fi"
     FAIRY_TALE = "fairy_tale"
-    ANIMAL = "animal"
-    FRIENDSHIP = "friendship"
-    BEDTIME = "bedtime"
+    FICTION = "fiction"
+    SCI_FI = "sci_fi"
     SUPERHERO = "superhero"
-    NATURE = "nature"
-    HISTORICAL = "historical"
-
 
 class ArtStyle(str, Enum):
     ANIME = "anime"
@@ -71,7 +64,7 @@ LLM_PROVIDER_LABELS = {
 
 class StoryOptions(BaseModel):
     idea: str = Field(..., min_length=3, max_length=500)
-    category: Category
+    category: Genre
     visual_style: ArtStyle
     story_type: StoryType
     audience: Audience = Audience.ALL_AGES
@@ -127,7 +120,7 @@ class StorySummary(BaseModel):
     id: str
     title: str
     idea: str
-    category: Category
+    category: Genre
     page_count: int
 
 

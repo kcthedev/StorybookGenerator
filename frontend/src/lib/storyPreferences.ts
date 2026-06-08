@@ -1,13 +1,13 @@
 import {
   AUDIENCE_LABELS,
-  CATEGORY_LABELS,
+  GENRE_LABELS,
   LLM_PROVIDER_LABELS,
   STORY_TYPE_LABELS,
   ART_STYLE_LABELS,
 } from "@/lib/storyLabels";
 import type {
   Audience,
-  Category,
+  Genre,
   LlmProvider,
   StoryOptions,
   StoryType,
@@ -30,8 +30,8 @@ export const DEFAULT_STORY_PREFERENCES: SavedStoryPreferences = {
   music_volume: 0.22,
 };
 
-function isCategory(value: unknown): value is Category {
-  return typeof value === "string" && value in CATEGORY_LABELS;
+function isCategory(value: unknown): value is Genre {
+  return typeof value === "string" && value in GENRE_LABELS;
 }
 
 function isVisualStyle(value: unknown): value is ArtStyle {

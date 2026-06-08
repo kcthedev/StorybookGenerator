@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   AUDIENCE_LABELS,
-  CATEGORY_LABELS,
+  GENRE_LABELS,
   STORY_TYPE_LABELS,
   ART_STYLE_LABELS,
 } from "@/lib/storyLabels";
@@ -49,7 +49,7 @@ export function StoryEndingPanel({
         <p className="mt-3 text-sm leading-relaxed text-amber-900">{idea}</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Stat label="Protagonist" value={character_name} />
-          <Stat label="Genre" value={CATEGORY_LABELS[category]} />
+          <Stat label="Genre" value={GENRE_LABELS[category]} />
           <Stat label="Story type" value={STORY_TYPE_LABELS[story_type]} />
           <Stat label="Audience" value={AUDIENCE_LABELS[audience ?? "all_ages"]} />
           <Stat label="Visual style" value={ART_STYLE_LABELS[visual_style]} />
@@ -96,9 +96,9 @@ export function buildFallbackRecap(story: StoryState): string {
     .slice(0, 4);
 
   if (moments.length === 0) {
-    return `You guided ${story.options.character_name} through a memorable ${CATEGORY_LABELS[story.options.category].toLowerCase()} story from start to finish.`;
+    return `You guided ${story.options.character_name} through a memorable ${GENRE_LABELS[story.options.category].toLowerCase()} story from start to finish.`;
   }
 
   const journey = moments.join(", then ");
-  return `Together with ${story.options.character_name}, you shaped a ${story.pages.length}-page ${CATEGORY_LABELS[story.options.category].toLowerCase()} story—${journey.toLowerCase()}. Every choice mattered, and it all led to this ending.`;
+  return `Together with ${story.options.character_name}, you shaped a ${story.pages.length}-page ${GENRE_LABELS[story.options.category].toLowerCase()} story—${journey.toLowerCase()}. Every choice mattered, and it all led to this ending.`;
 }
