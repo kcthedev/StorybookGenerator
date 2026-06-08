@@ -3,7 +3,7 @@ import {
   CATEGORY_LABELS,
   LLM_PROVIDER_LABELS,
   STORY_TYPE_LABELS,
-  VISUAL_STYLE_LABELS,
+  ART_STYLE_LABELS,
 } from "@/lib/storyLabels";
 import type {
   Audience,
@@ -11,7 +11,7 @@ import type {
   LlmProvider,
   StoryOptions,
   StoryType,
-  VisualStyle,
+  ArtStyle,
 } from "@/types/story";
 
 const STORAGE_KEY = "storybook-generator-preferences";
@@ -34,8 +34,8 @@ function isCategory(value: unknown): value is Category {
   return typeof value === "string" && value in CATEGORY_LABELS;
 }
 
-function isVisualStyle(value: unknown): value is VisualStyle {
-  return typeof value === "string" && value in VISUAL_STYLE_LABELS;
+function isVisualStyle(value: unknown): value is ArtStyle {
+  return typeof value === "string" && value in ART_STYLE_LABELS;
 }
 
 function isStoryType(value: unknown): value is StoryType {

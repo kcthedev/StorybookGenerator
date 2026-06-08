@@ -3,7 +3,6 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-
 class Category(str, Enum):
     FICTION = "fiction"
     ADVENTURE = "adventure"
@@ -20,21 +19,14 @@ class Category(str, Enum):
     HISTORICAL = "historical"
 
 
-class VisualStyle(str, Enum):
+class ArtStyle(str, Enum):
+    ANIME = "anime"
     CARTOON = "cartoon"
-    WATERCOLOR = "watercolor"
+    CRAYON = "crayon"
+    OIL_PAINTING = "oil_painting"
     PIXEL = "pixel"
     REALISTIC = "realistic"
-    STORYBOOK = "storybook"
-    ANIME = "anime"
-    CLAYMATION = "claymation"
-    CRAYON = "crayon"
-    COMIC_BOOK = "comic_book"
-    PASTEL = "pastel"
-    CHALK = "chalk"
-    PAPER_CUTOUT = "paper_cutout"
-    OIL_PAINTING = "oil_painting"
-
+    WATERCOLOR = "watercolor"
 
 class Audience(str, Enum):
     ALL_AGES = "all_ages"
@@ -80,7 +72,7 @@ LLM_PROVIDER_LABELS = {
 class StoryOptions(BaseModel):
     idea: str = Field(..., min_length=3, max_length=500)
     category: Category
-    visual_style: VisualStyle
+    visual_style: ArtStyle
     story_type: StoryType
     audience: Audience = Audience.ALL_AGES
     character_name: str = Field(default="Alex", min_length=1, max_length=50)

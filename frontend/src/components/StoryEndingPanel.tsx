@@ -3,7 +3,7 @@ import {
   AUDIENCE_LABELS,
   CATEGORY_LABELS,
   STORY_TYPE_LABELS,
-  VISUAL_STYLE_LABELS,
+  ART_STYLE_LABELS,
 } from "@/lib/storyLabels";
 import type { StoryState } from "@/types/story";
 
@@ -52,7 +52,7 @@ export function StoryEndingPanel({
           <Stat label="Genre" value={CATEGORY_LABELS[category]} />
           <Stat label="Story type" value={STORY_TYPE_LABELS[story_type]} />
           <Stat label="Audience" value={AUDIENCE_LABELS[audience ?? "all_ages"]} />
-          <Stat label="Visual style" value={VISUAL_STYLE_LABELS[visual_style]} />
+          <Stat label="Visual style" value={ART_STYLE_LABELS[visual_style]} />
           <Stat label="Pages read" value={String(pageCount)} />
         </div>
       </div>

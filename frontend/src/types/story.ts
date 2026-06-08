@@ -13,20 +13,14 @@ export type Category =
   | "nature"
   | "historical";
 
-export type VisualStyle =
+export type ArtStyle =
+  | "anime"
   | "cartoon"
-  | "watercolor"
+  | "crayon"
+  | "oil_painting"
   | "pixel"
   | "realistic"
-  | "storybook"
-  | "anime"
-  | "claymation"
-  | "crayon"
-  | "comic_book"
-  | "pastel"
-  | "chalk"
-  | "paper_cutout"
-  | "oil_painting";
+  | "watercolor";
 
 export type Audience = "all_ages" | "teen" | "adult";
 
@@ -72,7 +66,7 @@ export interface LlmProviderStatus {
 export interface StoryOptions {
   idea: string;
   category: Category;
-  visual_style: VisualStyle;
+  visual_style: ArtStyle;
   story_type: StoryType;
   audience?: Audience;
   character_name: string;

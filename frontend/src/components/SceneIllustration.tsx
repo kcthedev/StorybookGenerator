@@ -1,27 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { VisualStyle } from "@/types/story";
+import type { ArtStyle } from "@/types/story";
 
-const styleGradients: Record<VisualStyle, string> = {
+const styleGradients: Record<ArtStyle, string> = {
+  anime: "from-pink-200 via-fuchsia-300 to-purple-400",
   cartoon: "from-amber-200 via-orange-300 to-rose-400",
-  watercolor: "from-sky-200 via-indigo-200 to-violet-300",
+  crayon: "from-red-200 via-yellow-200 to-blue-300",
+  oil_painting: "from-amber-300 via-orange-400 to-red-500",
   pixel: "from-emerald-300 via-teal-400 to-cyan-500",
   realistic: "from-stone-300 via-zinc-400 to-slate-500",
-  storybook: "from-yellow-100 via-amber-200 to-orange-300",
-  anime: "from-pink-200 via-fuchsia-300 to-purple-400",
-  claymation: "from-orange-200 via-amber-300 to-yellow-400",
-  crayon: "from-red-200 via-yellow-200 to-blue-300",
-  comic_book: "from-yellow-300 via-red-400 to-blue-500",
-  pastel: "from-rose-100 via-pink-200 to-sky-200",
-  chalk: "from-slate-600 via-slate-500 to-slate-400",
-  paper_cutout: "from-lime-200 via-amber-200 to-orange-200",
-  oil_painting: "from-amber-300 via-orange-400 to-red-500",
+  watercolor: "from-sky-200 via-indigo-200 to-violet-300",  
 };
 
 interface SceneIllustrationProps {
   sceneDescription: string;
-  visualStyle: VisualStyle;
+  visualStyle: ArtStyle;
   imageUrl?: string | null;
 }
 

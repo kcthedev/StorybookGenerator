@@ -24,7 +24,7 @@ import type {
   StoryOptions,
   StoryType,
   VoiceOption,
-  VisualStyle,
+  ArtStyle,
 } from "@/types/story";
 
 const STORY_HINT = "A detective follows a clue through a rain-soaked city, or a traveler opens a door to another world...";
@@ -170,14 +170,14 @@ export function StoryCreator() {
           </select>
         </Field>
 
-        <Field label="Visual style" id="visual_style">
+        <Field label="Art Style" id="visual_style">
           <select
             id="visual_style"
             className="select-field"
             value={options.visual_style}
             onChange={(e) =>
               updatePreferences({
-                visual_style: e.target.value as VisualStyle,
+                visual_style: e.target.value as ArtStyle,
               })
             }
           >

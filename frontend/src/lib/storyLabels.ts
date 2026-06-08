@@ -1,4 +1,4 @@
-import type { Audience, Category, LlmProvider, StoryType, VisualStyle } from "@/types/story";
+import type { Audience, Category, LlmProvider, StoryType, ArtStyle } from "@/types/story";
 
 export const AUDIENCE_LABELS: Record<Audience, string> = {
   all_ages: "All Ages",
@@ -22,20 +22,14 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   historical: "Historical",
 };
 
-export const VISUAL_STYLE_LABELS: Record<VisualStyle, string> = {
+export const ART_STYLE_LABELS: Record<ArtStyle, string> = {
+  anime: "Anime / Manga",
   cartoon: "Cartoon",
-  watercolor: "Watercolor",
+  crayon: "Crayon Drawing",
+  oil_painting: "Oil Painting",
   pixel: "Pixel Art",
   realistic: "Realistic",
-  storybook: "Classic Storybook",
-  anime: "Anime / Manga",
-  claymation: "Claymation",
-  crayon: "Crayon Drawing",
-  comic_book: "Comic Book",
-  pastel: "Soft Pastel",
-  chalk: "Chalk Art",
-  paper_cutout: "Paper Cutout",
-  oil_painting: "Oil Painting",
+  watercolor: "Watercolor",
 };
 
 export const STORY_TYPE_LABELS: Record<StoryType, string> = {
@@ -59,8 +53,8 @@ export const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS).map(
   ([value, label]) => ({ value: value as Category, label }),
 );
 
-export const VISUAL_STYLE_OPTIONS = Object.entries(VISUAL_STYLE_LABELS).map(
-  ([value, label]) => ({ value: value as VisualStyle, label }),
+export const VISUAL_STYLE_OPTIONS = Object.entries(ART_STYLE_LABELS).map(
+  ([value, label]) => ({ value: value as ArtStyle, label }),
 );
 
 export const STORY_TYPE_OPTIONS = Object.entries(STORY_TYPE_LABELS).map(
