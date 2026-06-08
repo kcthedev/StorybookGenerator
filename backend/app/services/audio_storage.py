@@ -14,14 +14,6 @@ class AudioStorage:
     def narration_path(self, story_id: str, page_number: int) -> Path:
         return self.story_dir(story_id) / f"page_{page_number}_narration.mp3"
 
-    def music_path(self, story_id: str, extension: str = "mp3") -> Path:
-        return self.story_dir(story_id) / f"background_music.{extension}"
-
-    def music_paths(self, story_id: str) -> list[Path]:
-        return [
-            self.music_path(story_id, "mp3"),
-            self.music_path(story_id, "wav"),
-        ]
 
     def save_bytes(self, data: bytes, dest: Path) -> str:
         dest.write_bytes(data)
@@ -33,18 +25,6 @@ class AudioStorage:
 
     def url_for_narration(self, story_id: str, page_number: int) -> str:
         return self.public_url(self.narration_path(story_id, page_number))
-
-    def existing_music_path(self, story_id: str) -> Path | None:
-        for path in self.music_paths(story_id):
-            if path.is_file():
-                return path
-        return None
-
-    def url_for_music(self, story_id: str) -> str:
-        existing = self.existing_music_path(story_id)
-        if existing:
-            return self.public_url(existing)
-        return self.public_url(self.music_path(story_id))
 
     def narration_exists(self, story_id: str, page_number: int) -> bool:
         return self.narration_path(story_id, page_number).is_file()

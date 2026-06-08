@@ -90,8 +90,6 @@ export function StoryCreator() {
     }
   }, [voicesLoading, llmProvider, voices]);
 
-  const musicAvailable = llmProvider === "gemini";
-
   function updatePreferences(
     patch: Partial<Omit<StoryOptions, "idea">>,
   ) {
@@ -254,8 +252,6 @@ export function StoryCreator() {
                   nextProvider,
                   voices,
                 ),
-                music_enabled:
-                  nextProvider === "gemini" ? (options.music_enabled ?? false) : false,
               });
             }}
           >
@@ -277,34 +273,6 @@ export function StoryCreator() {
         onChange={(voiceId) => updatePreferences({ voice_id: voiceId })}
       />
 
-      <div className="rounded-xl border border-amber-100 bg-amber-50/40 px-4 py-3">
-        <label
-          className={`flex items-start gap-3 ${
-            musicAvailable ? "cursor-pointer" : "cursor-not-allowed opacity-70"
-          }`}
-        >
-          <input
-            type="checkbox"
-            className="mt-1 h-4 w-4 rounded border-amber-300 text-amber-500 focus:ring-amber-400"
-            checked={musicAvailable ? (options.music_enabled ?? false) : false}
-            disabled={!musicAvailable}
-            onChange={(e) =>
-              updatePreferences({ music_enabled: e.target.checked })
-            }
-          />
-          <span>
-            <span className="block text-sm font-semibold text-amber-900">
-              Background music
-            </span>
-            <span className="mt-1 block text-sm text-amber-800/90">
-              {musicAvailable
-                ? "Generate a looping ambient track from your story genre (Google Lyria via Gemini)."
-                : "Select Google Gemini as the story writer to enable background music."}
-            </span>
-          </span>
-        </label>
-      </div>
-
       {error && (
         <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700" role="alert">
           {error}
@@ -317,9 +285,7 @@ export function StoryCreator() {
         className="w-full rounded-xl bg-amber-500 px-6 py-3 font-semibold text-white shadow-md transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading
-          ? options.music_enabled && llmProvider === "gemini"
-            ? "Writing story, illustration, narration & music…"
-            : "Writing story, illustration & narration…"
+          ? "Writing story, illustration & narration…"
           : "Create story"}
       </button>
     </form>

@@ -14,7 +14,6 @@ from app.models.story import (
     StorySummary,
 )
 from app.services.llm_factory import get_image_service, get_text_service
-from app.services.music_service import MusicService
 from app.services.story_text_service import StoryTextService
 from app.services.tts_service import TtsService
 from app.services.tts_voices import (
@@ -31,7 +30,6 @@ class StoryService:
         self._stories: dict[str, StoryState] = {}
         self._images = get_image_service()
         self._tts = TtsService()
-        self._music = MusicService()
 
     def list_stories(self) -> list[StorySummary]:
         return [
@@ -51,17 +49,7 @@ class StoryService:
             raise HTTPException(status_code=404, detail="Story not found")
         return story
 
-    @staticmethod
-    def _music_allowed(options: StoryOptions) -> bool:
-        return (
-            options.llm_provider == LlmProvider.GEMINI
-            and options.music_enabled
-        )
-
     def create_story(self, request: CreateStoryRequest) -> StoryState:
-        if request.llm_provider != LlmProvider.GEMINI:
-            request = request.model_copy(update={"music_enabled": False})
-
         if request.voice_id == "openai:coral":
             default_voice = (
                 "gemini:Kore"
@@ -73,11 +61,12 @@ class StoryService:
         text_service = get_text_service(request)
         data = text_service.generate_first_page(request)
         story_id = str(uuid.uuid4())
-        page, music_url, music_unavailable = self._build_first_page_with_music(
-            data=data,
-            options=request,
-            story_id=story_id,
-            text_service=text_service,
+        page = self._build_page(
+            data,
+            1,
+            request,
+            story_id,
+            text_service,
         )
         story = StoryState(
             id=story_id,
@@ -85,8 +74,6 @@ class StoryService:
             options=request,
             pages=[page],
             current_page=0,
-            background_music_url=music_url,
-            background_music_unavailable=music_unavailable,
         )
         self._stories[story_id] = story
         return story
@@ -200,74 +187,11 @@ class StoryService:
             self._stories[story_id] = story
         return story
 
-    def ensure_background_music(self, story_id: str) -> StoryState:
-        story = self.get_story(story_id)
-        if (
-            story.background_music_url
-            or story.background_music_unavailable
-            or not self._music_allowed(story.options)
-        ):
-            return story
-
-        music_url = self._music.generate_background_music(story.options, story_id)
-        if music_url:
-            story = story.model_copy(update={"background_music_url": music_url})
-        elif self._music.is_permanently_unavailable(story_id):
-            story = story.model_copy(update={"background_music_unavailable": True})
-        self._stories[story_id] = story
-        return story
-
     def _find_choice(self, page: StoryPage, choice_id: str) -> Optional[ActionChoice]:
         for c in page.choices:
             if c.choice_id == choice_id:
                 return c
         return None
-
-    def _generate_story_music(
-        self,
-        options: StoryOptions,
-        story_id: str,
-    ) -> tuple[Optional[str], bool]:
-        if not self._music_allowed(options):
-            return None, False
-
-        music_url = self._music.generate_background_music(options, story_id)
-        if music_url:
-            return music_url, False
-        if self._music.is_permanently_unavailable(story_id):
-            return None, True
-        return None, False
-
-    def _build_first_page_with_music(
-        self,
-        data: dict[str, Any],
-        options: StoryOptions,
-        story_id: str,
-        text_service: StoryTextService,
-    ) -> tuple[StoryPage, Optional[str], bool]:
-        music_enabled = self._music_allowed(options)
-
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            page_future = pool.submit(
-                self._build_page,
-                data,
-                1,
-                options,
-                story_id,
-                text_service,
-            )
-            music_future = (
-                pool.submit(self._generate_story_music, options, story_id)
-                if music_enabled
-                else None
-            )
-            page = page_future.result()
-            if music_future:
-                music_url, music_unavailable = music_future.result()
-            else:
-                music_url, music_unavailable = None, False
-
-        return page, music_url, music_unavailable
 
     def _build_page(
         self,

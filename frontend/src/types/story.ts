@@ -72,8 +72,6 @@ export interface StoryOptions {
   character_name: string;
   llm_provider?: LlmProvider;
   voice_id?: string;
-  music_enabled?: boolean;
-  music_volume?: number;
 }
 
 export interface ActionChoice {
@@ -98,6 +96,4 @@ export interface StoryState {
   options: StoryOptions;
   pages: StoryPage[];
   current_page: number;
-  background_music_url?: string | null;
-  background_music_unavailable?: boolean;
 }

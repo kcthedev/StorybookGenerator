@@ -60,16 +60,6 @@ export async function ensureNarration(
   return data.story;
 }
 
-export async function ensureBackgroundMusic(
-  storyId: string,
-): Promise<StoryState> {
-  const data = await request<{ story: StoryState }>(
-    `/api/stories/${storyId}/music`,
-    { method: "POST" },
-  );
-  return data.story;
-}
-
 export async function createStory(
   options: StoryOptions,
 ): Promise<StoryState> {
