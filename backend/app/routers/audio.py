@@ -76,7 +76,3 @@ def ensure_narration(
     return NarrationResponse(story=story, page_index=page_index)
 
 
-@router.post("/stories/{story_id}/music")
-def ensure_music(story_id: str):
-    story = story_service.ensure_background_music(story_id)
-    return {"story": story}

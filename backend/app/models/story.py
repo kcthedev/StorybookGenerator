@@ -78,7 +78,6 @@ class StoryOptions(BaseModel):
     character_name: str = Field(default="Alex", min_length=1, max_length=50)
     llm_provider: LlmProvider = LlmProvider.OPENAI
     voice_id: str = "openai:coral"
-    music_enabled: bool = False
 
 
 class ActionChoice(BaseModel):
@@ -103,8 +102,6 @@ class StoryState(BaseModel):
     options: StoryOptions
     pages: list[StoryPage]
     current_page: int = 0
-    background_music_url: Optional[str] = None
-    background_music_unavailable: bool = False
 
 
 class CreateStoryRequest(StoryOptions):

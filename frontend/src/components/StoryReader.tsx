@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { BackgroundMusic } from "@/components/BackgroundMusic";
 import { SceneIllustration } from "@/components/SceneIllustration";
 import { StoryEndingPanel, buildFallbackRecap } from "@/components/StoryEndingPanel";
 import { StoryNarration } from "@/components/StoryNarration";
@@ -150,8 +149,6 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
           />
         </div>
       </header>
-
-      <BackgroundMusic story={story} onStoryUpdate={setStory} />
 
       <VoiceSelector
         voices={voiceOptions}
