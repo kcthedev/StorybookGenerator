@@ -16,6 +16,7 @@ import {
   VISUAL_STYLE_OPTIONS,
 } from "@/lib/storyLabels";
 import { BASE_LLM_PROVIDERS, BASE_TTS_VOICES, filterVoicesForLlm, mergeLlmProviders, mergeTtsVoices, resolveVoiceForLlm } from "@/lib/audioOptions";
+import { getRandomStoryHint } from "@/lib/storyHints";
 import type {
   Audience,
   Genre,
@@ -26,8 +27,6 @@ import type {
   VoiceOption,
   ArtStyle,
 } from "@/types/story";
-
-const STORY_HINT = "A detective follows a clue through a rain-soaked city, or a traveler opens a door to another world...";
 
 const defaultOptions: StoryOptions = {
   idea: "",
@@ -43,6 +42,7 @@ export function StoryCreator() {
   const [voicesLoading, setVoicesLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [storyHint] = useState(getRandomStoryHint);
 
   const llmProvider = options.llm_provider ?? "openai";
   const filteredVoices = filterVoicesForLlm(voices, llmProvider);
@@ -112,7 +112,7 @@ export function StoryCreator() {
       // Only auto-fill if the user has not started typing anything yet
       if (!options.idea.trim()) {
         e.preventDefault(); // Stop focus from jumping to the next field
-        updateIdea(STORY_HINT);
+        updateIdea(storyHint);
       }
     }
   };
@@ -144,7 +144,7 @@ export function StoryCreator() {
           id="idea"
           required
           rows={3}
-          placeholder={STORY_HINT}
+          placeholder={storyHint}
           className="w-full rounded-xl border border-amber-200 bg-amber-50/50 px-4 py-3 text-amber-950 placeholder:text-amber-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300/50"
           value={options.idea}
           onChange={(e) => updateIdea(e.target.value)}
