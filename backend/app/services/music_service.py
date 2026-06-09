@@ -25,22 +25,27 @@ LYRIA2_MODEL = "lyria-002"
 LYRIA_REGION = "us-central1"
 
 CATEGORY_MOODS = {
-    "adventure": "adventurous orchestral with light percussion",
-    "comedy": "playful ukulele and pizzicato strings",
-    "fantasy": "ethereal harp, flute, and soft choir pads",
-    "bedtime": "gentle lullaby piano and warm strings",
-    "mystery": "subtle suspenseful piano and low strings",
-    "suspense": "tense ambient pulses and minor-key strings",
+    "adventure": "upbeat acoustic instruments with light rhythm",
+    "comedy": "playful plucked strings and bells",
+    "fantasy": "soft harp and flute textures",
+    "bedtime": "slow piano and warm pads",
+    "mystery": "quiet piano with subtle low strings",
+    "suspense": "gentle ambient pulses in a minor key",
     "friendship": "warm acoustic guitar and soft bells",
-    "fairy_tale": "whimsical music-box melody and harp",
-    "educational": "bright, curious marimba and light piano",
-    "sci_fi": "ambient synth textures with soft arpeggios",
-    "animal": "gentle folk instruments and nature-like ambience",
-    "superhero": "heroic brass swells with energetic drums",
-    "nature": "peaceful acoustic guitar with birdsong-like textures",
-    "historical": "classical strings with dignified pacing",
-    "fiction": "cinematic underscore with emotional warmth",
+    "fairy_tale": "delicate music-box tones and harp",
+    "educational": "bright marimba and light piano",
+    "sci_fi": "soft synth pads with gentle arpeggios",
+    "animal": "gentle folk instruments with airy ambience",
+    "superhero": "light brass accents with steady drums",
+    "nature": "calm acoustic guitar with open ambience",
+    "historical": "measured string ensemble",
+    "fiction": "cinematic strings with a warm tone",
 }
+
+MINIMAL_PROMPTS = (
+    "Soft instrumental background music. Calm and gentle. No vocals, no lyrics.",
+    "Light piano and strings. Instrumental only. No singing or speech.",
+)
 
 
 @dataclass(frozen=True)
@@ -53,6 +58,7 @@ class MusicRoute:
 
 class MusicService:
     _resolved_route: Optional[MusicRoute] = None
+    _interactions_disabled: bool = False
 
     def __init__(self) -> None:
         self._storage = AudioStorage()
@@ -77,11 +83,11 @@ class MusicService:
         story_tone = options.story_type.value.replace("_", " ")
         if compact:
             return (
-                f"Instrumental {mood}. Peaceful background music for a "
+                f"Instrumental {mood}. Calm background music for a "
                 f"{story_tone} story. No vocals, no lyrics."
             )
         return (
-            f"Create a seamless 30-second instrumental background loop for a "
+            f"Original instrumental background loop for a "
             f"{options.category.value.replace('_', ' ')} storybook. "
             f"Mood: {mood}. Story tone: {story_tone}. "
             f"Audience: {options.audience.value.replace('_', ' ')}. "
@@ -89,28 +95,60 @@ class MusicService:
             "and suitable for looping continuously."
         )
 
+    def _prompts_to_try(self, options: StoryOptions) -> list[str]:
+        prompts = [
+            self.build_prompt(options, compact=True),
+            *MINIMAL_PROMPTS,
+            self.build_prompt(options),
+        ]
+        seen: set[str] = set()
+        ordered: list[str] = []
+        for prompt in prompts:
+            if prompt not in seen:
+                seen.add(prompt)
+                ordered.append(prompt)
+        return ordered
+
+    def _configured_model(self) -> str:
+        return settings.lyria_model.strip() or LYRIA2_MODEL
+
     def _routes_to_try(self) -> list[MusicRoute]:
         if self._resolved_route:
             return [self._resolved_route]
 
         region = self._active_region()
-        routes: list[MusicRoute] = [
+        configured = self._configured_model()
+        routes: list[MusicRoute] = []
+
+        if configured == LYRIA2_MODEL or configured.startswith("lyria-2"):
+            routes.append(
+                MusicRoute(
+                    api="predict",
+                    region=region,
+                    model=LYRIA2_MODEL,
+                    extension="wav",
+                )
+            )
+            return routes
+
+        if configured in LYRIA3_MODELS and not self._interactions_disabled:
+            routes.append(
+                MusicRoute(
+                    api="interactions",
+                    region=region,
+                    model=configured,
+                    extension="mp3",
+                )
+            )
+
+        routes.append(
             MusicRoute(
                 api="predict",
                 region=region,
                 model=LYRIA2_MODEL,
                 extension="wav",
-            ),
-        ]
-        for model in LYRIA3_MODELS:
-            routes.append(
-                MusicRoute(
-                    api="interactions",
-                    region=region,
-                    model=model,
-                    extension="mp3",
-                )
             )
+        )
         return routes
 
     def _mark_unavailable(self, story_id: str) -> None:
@@ -126,11 +164,17 @@ class MusicService:
             return int(match.group(1))
         return None
 
-    def _should_try_next_route(self, exc: Exception) -> bool:
+    def _should_try_next_route(self, exc: Exception, route: MusicRoute | None = None) -> bool:
         code = self._error_code(exc)
+        message = str(exc).lower()
+        if code == 403 and (
+            route is None
+            or route.api == "interactions"
+            or "interactions.create" in message
+        ):
+            MusicService._interactions_disabled = True
         if code in {403, 404, 400, 401}:
             return True
-        message = str(exc).lower()
         return any(
             token in message
             for token in (
@@ -232,7 +276,7 @@ class MusicService:
             logger.warning("Lyria music skipped: Google client not configured")
             return None
 
-        prompts = [self.build_prompt(options, compact=True), self.build_prompt(options)]
+        prompts = self._prompts_to_try(options)
         last_error: Exception | None = None
         region = self._active_region()
 
@@ -264,7 +308,7 @@ class MusicService:
                     )
                 except Exception as exc:
                     last_error = exc
-                    if self._should_try_next_route(exc):
+                    if self._should_try_next_route(exc, route):
                         logger.warning(
                             "Lyria route %s/%s/%s unavailable: %s",
                             route.api,

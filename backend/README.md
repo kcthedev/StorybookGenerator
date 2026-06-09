@@ -76,7 +76,7 @@ Edit `.env` and set `OPENAI_API_KEY` (and other values if needed). See `.env.exa
 | `GEMINI_SERVICE_ACCOUNT_FILE` | Path to the service account JSON (default `google_config.json`) |
 | `OPENAI_TTS_MODEL` | Narration voice model (default `gpt-4o-mini-tts`) |
 | `GEMINI_TTS_MODEL` | Gemini narration model (default `gemini-2.5-flash-tts`) |
-| `LYRIA_MODEL` | Background music model (default `lyria-3-clip-preview`) |
+| `LYRIA_MODEL` | Background music model (default `lyria-002`; set a Lyria 3 preview model only if Interactions API access is granted) |
 | `LYRIA_LOCATION` | Vertex region for Lyria (default `us-central1`) |
 | `CORS_ORIGINS` | Allowed frontend origin(s) (default `http://localhost:3000`) |
 | `API_PUBLIC_URL` | Base URL for generated image links (default `http://localhost:8000`) |

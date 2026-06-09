@@ -11,7 +11,7 @@ from app.services.story_text_service import StoryTextService
 
 logger = logging.getLogger(__name__)
 
-IMAGE_MODEL_FALLBACKS = ("gpt-image-1", "dall-e-2", "dall-e-3")
+IMAGE_MODEL_FALLBACKS = ("gpt-image-1-mini",)
 
 
 class OpenAIService(StoryTextService):
@@ -49,11 +49,15 @@ class OpenAIService(StoryTextService):
                 ordered.append(model)
         return ordered
 
+    @staticmethod
+    def _is_gpt_image_model(model: str) -> bool:
+        return model.startswith("gpt-image")
+
     def _image_generate_kwargs(
         self, model: str, prompt: str, visual_style: str | None = None
     ) -> dict[str, Any]:
         kwargs: dict[str, Any] = {"model": model, "prompt": prompt, "n": 1}
-        if model.startswith("gpt-image"):
+        if self._is_gpt_image_model(model):
             quality = "high" if visual_style == "realistic" else "medium"
             kwargs.update(
                 size="1024x1024",
@@ -66,6 +70,17 @@ class OpenAIService(StoryTextService):
         else:
             kwargs.update(size="1024x1024")
         return kwargs
+
+    def _should_try_next_image_model(self, exc: Exception) -> bool:
+        if isinstance(exc, TypeError):
+            return True
+        if isinstance(exc, BadRequestError):
+            err = str(exc).lower()
+            return any(
+                token in err
+                for token in ("does not exist", "invalid_value", "not found", "unknown parameter")
+            )
+        return False
 
     def _persist_generated_image(
         self, response_data: Any, story_id: str, page_number: int
@@ -105,11 +120,14 @@ class OpenAIService(StoryTextService):
                     if model != self._image_model:
                         logger.info("Image generated with fallback model %s", model)
                     return saved
-            except BadRequestError as exc:
+            except (BadRequestError, TypeError) as exc:
                 last_error = exc
-                err = str(exc).lower()
-                if "does not exist" in err or "invalid_value" in err or "not found" in err:
-                    logger.warning("Image model %s unavailable, trying next", model)
+                if self._should_try_next_image_model(exc):
+                    logger.warning(
+                        "Image model %s unavailable (%s), trying next",
+                        model,
+                        exc,
+                    )
                     continue
                 logger.exception(
                     "Image generation failed for story %s page %s", story_id, page_number

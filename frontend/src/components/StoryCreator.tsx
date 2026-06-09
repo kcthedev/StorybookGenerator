@@ -41,6 +41,7 @@ export function StoryCreator() {
   const [voices, setVoices] = useState<VoiceOption[]>(BASE_TTS_VOICES);
   const [voicesLoading, setVoicesLoading] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [storyHint, setStoryHint] = useState<string>(DEFAULT_STORY_HINT);
 
@@ -125,13 +126,15 @@ export function StoryCreator() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    setProgress(0);
     try {
-      const story = await createStory(options);
+      const story = await createStory(options, setProgress);
       router.push(`/reader/${story.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create story");
     } finally {
       setLoading(false);
+      setProgress(0);
     }
   }
 
@@ -320,11 +323,7 @@ export function StoryCreator() {
         disabled={loading}
         className="w-full rounded-xl bg-amber-500 px-6 py-3 font-semibold text-white shadow-md transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading
-          ? options.music_enabled && llmProvider === "gemini"
-            ? "Writing story, illustration, narration & music…"
-            : "Writing story, illustration & narration…"
-          : "Create story"}
+        {loading ? `Creating story… ${progress}%` : "Create story"}
       </button>
     </form>
   );

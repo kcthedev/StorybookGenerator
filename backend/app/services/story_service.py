@@ -1,6 +1,6 @@
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from fastapi import HTTPException
 
@@ -24,6 +24,39 @@ from app.services.tts_voices import (
 )
 
 MAX_PAGES = 8
+
+ProgressCallback = Callable[[int], None]
+
+
+class CreationProgress:
+    def __init__(
+        self,
+        music_enabled: bool,
+        on_progress: ProgressCallback | None,
+    ) -> None:
+        self._on_progress = on_progress
+        self._done: set[str] = set()
+        self._weights = {
+            "text": 30,
+            "image": 20 if music_enabled else 30,
+            "audio": 25 if music_enabled else 35,
+            **({"music": 20} if music_enabled else {}),
+        }
+
+    def start(self) -> None:
+        self._report(5)
+
+    def mark(self, step: str) -> None:
+        self._done.add(step)
+        pct = 5 + sum(self._weights[s] for s in self._done)
+        self._report(min(pct, 99))
+
+    def complete(self) -> None:
+        self._report(100)
+
+    def _report(self, pct: int) -> None:
+        if self._on_progress:
+            self._on_progress(pct)
 
 
 class StoryService:
@@ -58,7 +91,11 @@ class StoryService:
             and options.music_enabled
         )
 
-    def create_story(self, request: CreateStoryRequest) -> StoryState:
+    def create_story(
+        self,
+        request: CreateStoryRequest,
+        on_progress: ProgressCallback | None = None,
+    ) -> StoryState:
         if request.llm_provider != LlmProvider.GEMINI:
             request = request.model_copy(update={"music_enabled": False})
 
@@ -70,15 +107,22 @@ class StoryService:
             )
             request = request.model_copy(update={"voice_id": default_voice})
 
+        progress = CreationProgress(self._music_allowed(request), on_progress)
+        progress.start()
+
         text_service = get_text_service(request)
         data = text_service.generate_first_page(request)
+        progress.mark("text")
+
         story_id = str(uuid.uuid4())
         page, music_url, music_unavailable = self._build_first_page_with_music(
             data=data,
             options=request,
             story_id=story_id,
             text_service=text_service,
+            progress=progress,
         )
+        progress.complete()
         story = StoryState(
             id=story_id,
             title=data.get("title", "Untitled Story"),
@@ -227,11 +271,14 @@ class StoryService:
         self,
         options: StoryOptions,
         story_id: str,
+        progress: CreationProgress | None = None,
     ) -> tuple[Optional[str], bool]:
         if not self._music_allowed(options):
             return None, False
 
         music_url = self._music.generate_background_music(options, story_id)
+        if progress:
+            progress.mark("music")
         if music_url:
             return music_url, False
         if self._music.is_permanently_unavailable(story_id):
@@ -244,6 +291,7 @@ class StoryService:
         options: StoryOptions,
         story_id: str,
         text_service: StoryTextService,
+        progress: CreationProgress | None = None,
     ) -> tuple[StoryPage, Optional[str], bool]:
         music_enabled = self._music_allowed(options)
 
@@ -255,9 +303,15 @@ class StoryService:
                 options,
                 story_id,
                 text_service,
+                progress,
             )
             music_future = (
-                pool.submit(self._generate_story_music, options, story_id)
+                pool.submit(
+                    self._generate_story_music,
+                    options,
+                    story_id,
+                    progress,
+                )
                 if music_enabled
                 else None
             )
@@ -276,15 +330,17 @@ class StoryService:
         options: StoryOptions,
         story_id: str,
         text_service: StoryTextService,
+        progress: CreationProgress | None = None,
     ) -> StoryPage:
         page = text_service.to_story_page(data, page_number)
-        return self._enrich_page(page, options, story_id)
+        return self._enrich_page(page, options, story_id, progress)
 
     def _enrich_page(
         self,
         page: StoryPage,
         options: StoryOptions,
         story_id: str,
+        progress: CreationProgress | None = None,
     ) -> StoryPage:
         def generate_image() -> Optional[str]:
             return self._images.generate_scene_image(
@@ -312,7 +368,11 @@ class StoryService:
             image_future = pool.submit(generate_image)
             audio_future = pool.submit(generate_audio)
             image_url = image_future.result()
+            if progress:
+                progress.mark("image")
             audio_url = audio_future.result()
+            if progress:
+                progress.mark("audio")
 
         return page.model_copy(update={"image_url": image_url, "audio_url": audio_url})
 

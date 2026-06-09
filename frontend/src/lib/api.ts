@@ -72,12 +72,64 @@ export async function ensureBackgroundMusic(
 
 export async function createStory(
   options: StoryOptions,
+  onProgress?: (progress: number) => void,
 ): Promise<StoryState> {
-  const data = await request<{ story: StoryState }>("/api/stories", {
+  const res = await fetch(`${API_BASE}/api/stories?stream=true`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(options),
   });
-  return data.story;
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(
+      typeof err.detail === "string" ? err.detail : "Request failed",
+    );
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) {
+    throw new Error("Story creation failed");
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let story: StoryState | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.trim()) {
+        continue;
+      }
+      const event = JSON.parse(line) as {
+        progress?: number;
+        story?: StoryState;
+        error?: string;
+      };
+      if (event.progress !== undefined) {
+        onProgress?.(event.progress);
+      }
+      if (event.story) {
+        story = event.story;
+      }
+      if (event.error) {
+        throw new Error(event.error);
+      }
+    }
+  }
+
+  if (!story) {
+    throw new Error("Story creation failed");
+  }
+  return story;
 }
 
 export async function getStory(storyId: string): Promise<StoryState> {
