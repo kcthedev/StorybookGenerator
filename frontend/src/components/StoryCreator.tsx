@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { createStory, getLlmProviders, getTtsVoices } from "@/lib/api";
-import { VoiceSelector } from "@/components/VoiceSelector";
+import { AdvancedStorySettings } from "@/components/AdvancedStorySettings";
 import {
   DEFAULT_STORY_PREFERENCES,
   loadStoryPreferences,
@@ -20,7 +20,6 @@ import { DEFAULT_STORY_HINT, getRandomStoryHint } from "@/lib/storyHints";
 import type {
   Audience,
   Genre,
-  LlmProvider,
   LlmProviderStatus,
   StoryOptions,
   StoryType,
@@ -94,8 +93,6 @@ export function StoryCreator() {
       updatePreferences({ voice_id: resolved });
     }
   }, [voicesLoading, llmProvider, voices]);
-
-  const musicAvailable = llmProvider === "gemini";
 
   function updatePreferences(
     patch: Partial<Omit<StoryOptions, "idea">>,
@@ -246,71 +243,34 @@ export function StoryCreator() {
             }
           />
         </Field>
-
-        <Field label="Story writer (LLM)" id="llm_provider">
-          <select
-            id="llm_provider"
-            className="select-field"
-            value={options.llm_provider ?? "openai"}
-            onChange={(e) => {
-              const nextProvider = e.target.value as LlmProvider;
-              updatePreferences({
-                llm_provider: nextProvider,
-                voice_id: resolveVoiceForLlm(
-                  options.voice_id,
-                  nextProvider,
-                  voices,
-                ),
-                music_enabled:
-                  nextProvider === "gemini" ? (options.music_enabled ?? false) : false,
-              });
-            }}
-          >
-            {llmProviders.map((p) => (
-              <option key={p.id} value={p.id} disabled={!p.available}>
-                {p.label}
-                {!p.available ? " (not configured)" : ""}
-                {p.available && !p.configured ? " (demo mode)" : ""}
-              </option>
-            ))}
-          </select>
-        </Field>
       </div>
 
-      <VoiceSelector
+      <AdvancedStorySettings
+        llmProvider={llmProvider}
+        llmProviders={llmProviders}
         voices={filteredVoices}
         selectedVoiceId={selectedVoiceId}
         voicesLoading={voicesLoading}
-        onChange={(voiceId) => updatePreferences({ voice_id: voiceId })}
+        musicEnabled={options.music_enabled ?? false}
+        onLlmProviderChange={(nextProvider) =>
+          updatePreferences({
+            llm_provider: nextProvider,
+            voice_id: resolveVoiceForLlm(
+              options.voice_id,
+              nextProvider,
+              voices,
+            ),
+            music_enabled:
+              nextProvider === "gemini"
+                ? (options.music_enabled ?? false)
+                : false,
+          })
+        }
+        onVoiceChange={(voiceId) => updatePreferences({ voice_id: voiceId })}
+        onMusicEnabledChange={(enabled) =>
+          updatePreferences({ music_enabled: enabled })
+        }
       />
-
-      <div className="rounded-xl border border-amber-100 bg-amber-50/40 px-4 py-3">
-        <label
-          className={`flex items-start gap-3 ${
-            musicAvailable ? "cursor-pointer" : "cursor-not-allowed opacity-70"
-          }`}
-        >
-          <input
-            type="checkbox"
-            className="mt-1 h-4 w-4 rounded border-amber-300 text-amber-500 focus:ring-amber-400"
-            checked={musicAvailable ? (options.music_enabled ?? false) : false}
-            disabled={!musicAvailable}
-            onChange={(e) =>
-              updatePreferences({ music_enabled: e.target.checked })
-            }
-          />
-          <span>
-            <span className="block text-sm font-semibold text-amber-900">
-              Background music
-            </span>
-            <span className="mt-1 block text-sm text-amber-800/90">
-              {musicAvailable
-                ? "Generate a looping ambient track from your story genre (Google Lyria via Gemini)."
-                : "Select Google Gemini as the story writer to enable background music."}
-            </span>
-          </span>
-        </label>
-      </div>
 
       {error && (
         <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700" role="alert">
