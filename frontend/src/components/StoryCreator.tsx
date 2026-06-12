@@ -11,18 +11,14 @@ import {
 } from "@/lib/storyPreferences";
 import {
   AUDIENCE_OPTIONS,
-  CATEGORY_OPTIONS,
-  STORY_TYPE_OPTIONS,
   VISUAL_STYLE_OPTIONS,
 } from "@/lib/storyLabels";
 import { BASE_LLM_PROVIDERS, BASE_TTS_VOICES, filterVoicesForLlm, mergeLlmProviders, mergeTtsVoices, resolveVoiceForLlm } from "@/lib/audioOptions";
 import { DEFAULT_STORY_HINT, getRandomStoryHint } from "@/lib/storyHints";
 import type {
   Audience,
-  Genre,
   LlmProviderStatus,
   StoryOptions,
-  StoryType,
   VoiceOption,
   ArtStyle,
 } from "@/types/story";
@@ -142,8 +138,11 @@ export function StoryCreator() {
     >
       <div>
         <label htmlFor="idea" className="mb-2 block text-sm font-semibold text-amber-900">
-           Story Idea{" "}
+          Story idea
         </label>
+        <p className="mb-2 text-xs text-amber-700/80">
+          Describe your story and include character names if you like.
+        </p>
         <textarea
           id="idea"
           required
@@ -156,24 +155,26 @@ export function StoryCreator() {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Genre" id="category">
-          <select
-            id="category"
-            className="select-field"
-            value={options.category}
-            onChange={(e) =>
-              updatePreferences({ category: e.target.value as Genre })
-            }
-          >
-            {CATEGORY_OPTIONS.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </Field>
+      <div className="space-y-5">
+        <ToneSlider
+          id="mood"
+          label="Mood / tone"
+          minLabel="Sad"
+          maxLabel="Happy"
+          value={options.mood}
+          onChange={(mood) => updatePreferences({ mood })}
+        />
+        <ToneSlider
+          id="ending"
+          label="Ending"
+          minLabel="Full closure"
+          maxLabel="Cliffhanger"
+          value={options.ending}
+          onChange={(ending) => updatePreferences({ ending })}
+        />
+      </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Art Style" id="visual_style">
           <select
             id="visual_style"
@@ -188,25 +189,6 @@ export function StoryCreator() {
             {VISUAL_STYLE_OPTIONS.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        <Field label="Story type" id="story_type">
-          <select
-            id="story_type"
-            className="select-field"
-            value={options.story_type}
-            onChange={(e) =>
-              updatePreferences({
-                story_type: e.target.value as StoryType,
-              })
-            }
-          >
-            {STORY_TYPE_OPTIONS.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
               </option>
             ))}
           </select>
@@ -229,19 +211,6 @@ export function StoryCreator() {
               </option>
             ))}
           </select>
-        </Field>
-
-        <Field label="Main character" id="character_name">
-          <input
-            id="character_name"
-            type="text"
-            required
-            className="select-field"
-            value={options.character_name}
-            onChange={(e) =>
-              updatePreferences({ character_name: e.target.value })
-            }
-          />
         </Field>
       </div>
 
@@ -304,6 +273,44 @@ function Field({
         {label}
       </label>
       {children}
+    </div>
+  );
+}
+
+function ToneSlider({
+  id,
+  label,
+  minLabel,
+  maxLabel,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  minLabel: string;
+  maxLabel: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-2 block text-sm font-semibold text-amber-900">
+        {label}
+      </label>
+      <div className="flex items-center justify-between text-xs font-medium text-amber-700">
+        <span>{minLabel}</span>
+        <span>{maxLabel}</span>
+      </div>
+      <input
+        id={id}
+        type="range"
+        min={0}
+        max={100}
+        step={1}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="tone-slider mt-2 w-full"
+      />
     </div>
   );
 }

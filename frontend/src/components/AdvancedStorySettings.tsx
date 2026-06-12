@@ -67,7 +67,7 @@ export function AdvancedStorySettings({
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition hover:bg-amber-50/60"
+        className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition hover:bg-amber-50/60"
       >
         <div className="min-w-0">
           <span className="text-sm font-semibold text-amber-900">Advanced</span>

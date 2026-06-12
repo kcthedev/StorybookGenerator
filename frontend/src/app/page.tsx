@@ -8,8 +8,9 @@ export default function HomePage() {
           Storybook Generator
         </h1>
         <p className="mt-4 text-lg text-amber-800/90">
-          Turn any idea into an interactive illustrated story. Pick your genre,
-          style, and audience — then shape the plot page by page with your choices.
+          Turn any idea into an interactive illustrated story. Set the mood and
+          ending, pick your style and audience — then shape the plot page by page
+          with your choices.
         </p>
       </div>
       <StoryCreator />

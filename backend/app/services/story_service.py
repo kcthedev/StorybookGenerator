@@ -72,7 +72,8 @@ class StoryService:
                 id=s.id,
                 title=s.title,
                 idea=s.options.idea,
-                category=s.options.category,
+                mood=s.options.mood,
+                ending=s.options.ending,
                 page_count=len(s.pages),
             )
             for s in self._stories.values()

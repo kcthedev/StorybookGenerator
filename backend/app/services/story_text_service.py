@@ -5,6 +5,7 @@ from typing import Any
 
 from app.models.story import ActionChoice, Audience, StoryOptions, StoryPage
 from app.services.image_service import ImageService
+from app.services.story_tone import ending_guidance, mood_guidance
 
 CHOICE_SCHEMA_HINT = (
     'Each choice MUST be {"choice_id": "short_snake_case_id", "label": "What the character does"}. '
@@ -19,8 +20,8 @@ DEFAULT_CHOICES = [
 WRITER_SYSTEM = (
     "You are a skilled interactive fiction writer for illustrated storybooks. "
     "Adapt tone, vocabulary, and themes to the target audience while honoring "
-    "the chosen genre, story type, and idea. Stories can be playful, epic, "
-    "mysterious, romantic, thoughtful, or dramatic as appropriate."
+    "the story idea, mood slider, and ending slider. Stories can be playful, "
+    "epic, mysterious, romantic, thoughtful, or dramatic as appropriate."
 )
 
 AUDIENCE_GUIDANCE = {
@@ -167,10 +168,9 @@ class StoryTextService(ABC):
         user = (
             f"Write page 1 of an interactive story.\n"
             f"Idea: {options.idea}\n"
-            f"Genre: {options.category.value}\n"
             f"Visual style: {options.visual_style.value}\n"
-            f"Story type: {options.story_type.value}\n"
-            f"Main character: {options.character_name}\n"
+            f"{mood_guidance(options.mood)}\n"
+            f"{ending_guidance(options.ending)}\n"
             f"{self._audience_guidance(options)}\n"
             f"{self._scene_guidance(options)}\n"
             f"Keep text 2-4 sentences, vivid and engaging."
@@ -198,8 +198,10 @@ class StoryTextService(ABC):
             f"Continue the story on page {page_number} (max {total_pages} pages).\n"
             f"Previous page: {previous_text}\n"
             f"Reader chose: {choice_label}\n"
-            f"Genre: {options.category.value}, style: {options.visual_style.value}, "
-            f"type: {options.story_type.value}, character: {options.character_name}.\n"
+            f"Visual style: {options.visual_style.value}.\n"
+            f"Idea: {options.idea}\n"
+            f"{mood_guidance(options.mood)}\n"
+            f"{ending_guidance(options.ending)}\n"
             f"{self._audience_guidance(options)}\n"
             f"{self._scene_guidance(options)}\n"
             f"Provide 2-3 choices unless is_ending is true."
@@ -225,14 +227,15 @@ class StoryTextService(ABC):
         user = (
             f"Write the final page for this interactive story.\n"
             f"Title: {title}\n"
-            f"Character: {options.character_name}\n"
-            f"Genre: {options.category.value}, story type: {options.story_type.value}\n"
+            f"Idea: {options.idea}\n"
             f"Visual style: {options.visual_style.value}\n"
+            f"{mood_guidance(options.mood)}\n"
+            f"{ending_guidance(options.ending)}\n"
             f"Reader's last choice: {last_choice_label}\n"
             f"{self._audience_guidance(options)}\n"
             f"{self._scene_guidance(options)}\n"
             f"Story so far:\n{journey}\n"
-            f"End the story in a way that fits the {options.story_type.value} story type."
+            f"End the story following the ending style above."
         )
         return self._chat(system, user)
 

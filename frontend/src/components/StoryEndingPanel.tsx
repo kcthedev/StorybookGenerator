@@ -1,9 +1,9 @@
 import Link from "next/link";
 import {
   AUDIENCE_LABELS,
-  GENRE_LABELS,
-  STORY_TYPE_LABELS,
   ART_STYLE_LABELS,
+  formatEndingLabel,
+  formatMoodLabel,
 } from "@/lib/storyLabels";
 import type { StoryState } from "@/types/story";
 
@@ -20,8 +20,7 @@ export function StoryEndingPanel({
   onReadAgain,
   loading,
 }: StoryEndingPanelProps) {
-  const { idea, character_name, category, visual_style, story_type, audience } =
-    story.options;
+  const { idea, mood, ending, visual_style, audience } = story.options;
   const pageCount = story.pages.length;
 
   return (
@@ -48,9 +47,8 @@ export function StoryEndingPanel({
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-amber-900">{idea}</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Stat label="Protagonist" value={character_name} />
-          <Stat label="Genre" value={GENRE_LABELS[category]} />
-          <Stat label="Story type" value={STORY_TYPE_LABELS[story_type]} />
+          <Stat label="Mood" value={formatMoodLabel(mood)} />
+          <Stat label="Ending" value={formatEndingLabel(ending)} />
           <Stat label="Audience" value={AUDIENCE_LABELS[audience ?? "all_ages"]} />
           <Stat label="Visual style" value={ART_STYLE_LABELS[visual_style]} />
           <Stat label="Pages read" value={String(pageCount)} />
@@ -96,9 +94,9 @@ export function buildFallbackRecap(story: StoryState): string {
     .slice(0, 4);
 
   if (moments.length === 0) {
-    return `You guided ${story.options.character_name} through a memorable ${GENRE_LABELS[story.options.category].toLowerCase()} story from start to finish.`;
+    return "You guided the story through a memorable adventure from start to finish.";
   }
 
   const journey = moments.join(", then ");
-  return `Together with ${story.options.character_name}, you shaped a ${story.pages.length}-page ${GENRE_LABELS[story.options.category].toLowerCase()} story—${journey.toLowerCase()}. Every choice mattered, and it all led to this ending.`;
+  return `You shaped a ${story.pages.length}-page story—${journey.toLowerCase()}. Every choice mattered, and it all led to this ending.`;
 }

@@ -7,6 +7,7 @@ from openai import BadRequestError, OpenAI
 from app.config import settings
 from app.models.story import StoryOptions, StoryPage
 from app.services.image_service import ImageService
+from app.services.llm_json import parse_llm_json
 from app.services.story_text_service import StoryTextService
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ class OpenAIService(StoryTextService):
             temperature=0.8,
         )
         content = response.choices[0].message.content or "{}"
-        return json.loads(content)
+        return parse_llm_json(content)
 
     def _image_models_to_try(self) -> list[str]:
         configured = self._image_model.strip()
@@ -102,7 +103,6 @@ class OpenAIService(StoryTextService):
         prompt = self._images.build_prompt(
             scene_description,
             options.visual_style.value,
-            options.character_name,
         )
         if not self._client:
             return self._images.placeholder_path(story_id, page_number)

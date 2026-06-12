@@ -1,19 +1,9 @@
-import type { Audience, Genre, LlmProvider, StoryType, ArtStyle } from "@/types/story";
+import type { Audience, LlmProvider, ArtStyle } from "@/types/story";
 
 export const AUDIENCE_LABELS: Record<Audience, string> = {
   all_ages: "All Ages",
   teen: "Teen & Young Adult",
   adult: "Adult",
-};
-
-export const GENRE_LABELS: Record<Genre, string> = {
-  adventure: "Adventure",
-  comedy: "Comedy",
-  fantasy: "Fantasy",
-  fairy_tale: "Fairy Tale",
-  fiction: "Fiction",
-  sci_fi: "Science Fiction",
-  superhero: "Superhero",
 };
 
 export const ART_STYLE_LABELS: Record<ArtStyle, string> = {
@@ -26,33 +16,12 @@ export const ART_STYLE_LABELS: Record<ArtStyle, string> = {
   watercolor: "Watercolor",
 };
 
-export const STORY_TYPE_LABELS: Record<StoryType, string> = {
-  happy_ending: "Happy Ending",
-  open_ending: "Open Ending",
-  mystery: "Mystery",
-  age_rated: "Mature Themes",
-  choose_your_own: "Choose Your Own Path",
-  suspense: "Suspenseful",
-  inspiring: "Inspiring",
-  quest: "Hero's Quest",
-  surprise_twist: "Surprise Twist",
-  bedtime_calm: "Bedtime Calm",
-};
-
 export const AUDIENCE_OPTIONS = Object.entries(AUDIENCE_LABELS).map(
   ([value, label]) => ({ value: value as Audience, label }),
 );
 
-export const CATEGORY_OPTIONS = Object.entries(GENRE_LABELS).map(
-  ([value, label]) => ({ value: value as Genre, label }),
-);
-
 export const VISUAL_STYLE_OPTIONS = Object.entries(ART_STYLE_LABELS).map(
   ([value, label]) => ({ value: value as ArtStyle, label }),
-);
-
-export const STORY_TYPE_OPTIONS = Object.entries(STORY_TYPE_LABELS).map(
-  ([value, label]) => ({ value: value as StoryType, label }),
 );
 
 export const LLM_PROVIDER_LABELS: Record<LlmProvider, string> = {
@@ -63,3 +32,19 @@ export const LLM_PROVIDER_LABELS: Record<LlmProvider, string> = {
 export const LLM_PROVIDER_OPTIONS = Object.entries(LLM_PROVIDER_LABELS).map(
   ([value, label]) => ({ value: value as LlmProvider, label }),
 );
+
+export function formatMoodLabel(mood: number): string {
+  if (mood <= 20) return "Somber";
+  if (mood <= 40) return "Reflective";
+  if (mood <= 60) return "Balanced";
+  if (mood <= 80) return "Warm";
+  return "Upbeat";
+}
+
+export function formatEndingLabel(ending: number): string {
+  if (ending <= 20) return "Full closure";
+  if (ending <= 40) return "Mostly resolved";
+  if (ending <= 60) return "Open-ended";
+  if (ending <= 80) return "Suspenseful";
+  return "Cliffhanger";
+}

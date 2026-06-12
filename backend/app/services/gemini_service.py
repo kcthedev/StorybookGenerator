@@ -8,6 +8,7 @@ from google.genai import types
 from google.oauth2 import service_account
 
 from app.config import settings
+from app.services.llm_json import parse_llm_json
 from app.services.story_text_service import StoryTextService
 
 logger = logging.getLogger(__name__)
@@ -80,14 +81,27 @@ class GeminiService(StoryTextService):
         if not self._client:
             return self._mock_response(user)
 
-        response = self._client.models.generate_content(
-            model=self._model,
-            contents=user,
-            config=types.GenerateContentConfig(
-                system_instruction=system,
-                response_mime_type="application/json",
-                temperature=0.8,
-            ),
-        )
-        content = response.text or "{}"
-        return json.loads(content)
+        last_error: json.JSONDecodeError | None = None
+        for attempt in range(2):
+            response = self._client.models.generate_content(
+                model=self._model,
+                contents=user,
+                config=types.GenerateContentConfig(
+                    system_instruction=system,
+                    response_mime_type="application/json",
+                    temperature=0.8,
+                ),
+            )
+            content = response.text or "{}"
+            try:
+                return parse_llm_json(content)
+            except json.JSONDecodeError as exc:
+                last_error = exc
+                logger.warning(
+                    "Gemini JSON parse failed on attempt %s: %s",
+                    attempt + 1,
+                    exc,
+                )
+
+        assert last_error is not None
+        raise last_error

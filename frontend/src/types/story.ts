@@ -1,97 +1,76 @@
-export type Genre =
-  | "adventure"
-  | "comedy"
-  | "fantasy"
-  | "fairy_tale"
-  | "fiction"
-  | "sci_fi"
-  | "superhero";
-
-export type ArtStyle =
-  | "anime"
-  | "cartoon"
-  | "crayon"
-  | "oil_painting"
-  | "pixel"
-  | "realistic"
-  | "watercolor";
-
-export type Audience = "all_ages" | "teen" | "adult";
-
-export type StoryType =
-  | "happy_ending"
-  | "open_ending"
-  | "mystery"
-  | "age_rated"
-  | "choose_your_own"
-  | "suspense"
-  | "inspiring"
-  | "quest"
-  | "surprise_twist"
-  | "bedtime_calm";
-
-export type ReadingLayout = "split" | "vertical";
-
-export type LlmProvider = "openai" | "gemini";
-
-export type TtsProvider = "none" | "openai" | "gemini";
-
-export const NO_VOICE_ID = "none";
-
-export function isVoiceDisabled(voiceId?: string | null): boolean {
-  return voiceId === NO_VOICE_ID;
-}
-
-export interface VoiceOption {
-  id: string;
-  provider: TtsProvider;
-  label: string;
-  description: string;
-  available: boolean;
-}
-
-export interface LlmProviderStatus {
-  id: LlmProvider;
-  label: string;
-  configured: boolean;
-  available: boolean;
-}
-
-export interface StoryOptions {
-  idea: string;
-  category: Genre;
-  visual_style: ArtStyle;
-  story_type: StoryType;
-  audience?: Audience;
-  character_name: string;
-  llm_provider?: LlmProvider;
-  voice_id?: string;
-  music_enabled?: boolean;
-  music_volume?: number;
-}
-
-export interface ActionChoice {
-  choice_id: string;
-  label: string;
-}
-
-export interface StoryPage {
-  page_number: number;
-  text: string;
-  scene_description: string;
-  image_url?: string | null;
-  audio_url?: string | null;
-  choices: ActionChoice[];
-  is_ending: boolean;
-  recap?: string | null;
-}
-
-export interface StoryState {
-  id: string;
-  title: string;
-  options: StoryOptions;
-  pages: StoryPage[];
-  current_page: number;
-  background_music_url?: string | null;
-  background_music_unavailable?: boolean;
-}
+export type ArtStyle =
+  | "anime"
+  | "cartoon"
+  | "crayon"
+  | "oil_painting"
+  | "pixel"
+  | "realistic"
+  | "watercolor";
+
+export type Audience = "all_ages" | "teen" | "adult";
+
+export type ReadingLayout = "split" | "vertical";
+
+export type LlmProvider = "openai" | "gemini";
+
+export type TtsProvider = "none" | "openai" | "gemini";
+
+export const NO_VOICE_ID = "none";
+
+export function isVoiceDisabled(voiceId?: string | null): boolean {
+  return voiceId === NO_VOICE_ID;
+}
+
+export interface VoiceOption {
+  id: string;
+  provider: TtsProvider;
+  label: string;
+  description: string;
+  available: boolean;
+}
+
+export interface LlmProviderStatus {
+  id: LlmProvider;
+  label: string;
+  configured: boolean;
+  available: boolean;
+}
+
+export interface StoryOptions {
+  idea: string;
+  mood: number;
+  ending: number;
+  visual_style: ArtStyle;
+  audience?: Audience;
+  llm_provider?: LlmProvider;
+  voice_id?: string;
+  music_enabled?: boolean;
+  music_volume?: number;
+}
+
+export interface ActionChoice {
+  choice_id: string;
+  label: string;
+}
+
+export interface StoryPage {
+  page_number: number;
+  text: string;
+  scene_description: string;
+  image_url?: string | null;
+  audio_url?: string | null;
+  choices: ActionChoice[];
+  is_ending: boolean;
+  recap?: string | null;
+}
+
+export interface StoryState {
+  id: string;
+  title: string;
+  options: StoryOptions;
+  pages: StoryPage[];
+  current_page: number;
+  background_music_url?: string | null;
+  background_music_unavailable?: boolean;
+}
+

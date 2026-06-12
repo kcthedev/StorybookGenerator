@@ -1,16 +1,12 @@
 import {
   AUDIENCE_LABELS,
-  GENRE_LABELS,
   LLM_PROVIDER_LABELS,
-  STORY_TYPE_LABELS,
   ART_STYLE_LABELS,
 } from "@/lib/storyLabels";
 import type {
   Audience,
-  Genre,
   LlmProvider,
   StoryOptions,
-  StoryType,
   ArtStyle,
 } from "@/types/story";
 
@@ -19,27 +15,18 @@ const STORAGE_KEY = "storybook-generator-preferences";
 export type SavedStoryPreferences = Omit<StoryOptions, "idea">;
 
 export const DEFAULT_STORY_PREFERENCES: SavedStoryPreferences = {
-  category: "adventure",
+  mood: 50,
+  ending: 0,
   visual_style: "cartoon",
-  story_type: "happy_ending",
   audience: "all_ages",
-  character_name: "Alex",
   llm_provider: "openai",
   voice_id: "openai:coral",
   music_enabled: false,
   music_volume: 0.22,
 };
 
-function isCategory(value: unknown): value is Genre {
-  return typeof value === "string" && value in GENRE_LABELS;
-}
-
 function isVisualStyle(value: unknown): value is ArtStyle {
   return typeof value === "string" && value in ART_STYLE_LABELS;
-}
-
-function isStoryType(value: unknown): value is StoryType {
-  return typeof value === "string" && value in STORY_TYPE_LABELS;
 }
 
 function isAudience(value: unknown): value is Audience {
@@ -50,27 +37,52 @@ function isLlmProvider(value: unknown): value is LlmProvider {
   return typeof value === "string" && value in LLM_PROVIDER_LABELS;
 }
 
+function clampSlider(value: unknown, fallback: number): number {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return fallback;
+  }
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+function parseMood(record: Record<string, unknown>): number {
+  if (typeof record.mood === "number") {
+    return clampSlider(record.mood, DEFAULT_STORY_PREFERENCES.mood);
+  }
+  return DEFAULT_STORY_PREFERENCES.mood;
+}
+
+function parseEnding(record: Record<string, unknown>): number {
+  if (typeof record.ending === "number") {
+    return clampSlider(record.ending, DEFAULT_STORY_PREFERENCES.ending);
+  }
+
+  const storyType = record.story_type;
+  if (storyType === "open_ending" || storyType === "suspense" || storyType === "mystery") {
+    return 75;
+  }
+  if (storyType === "surprise_twist") {
+    return 90;
+  }
+  if (storyType === "happy_ending" || storyType === "bedtime_calm") {
+    return 10;
+  }
+
+  return DEFAULT_STORY_PREFERENCES.ending;
+}
+
 function parseSavedPreferences(data: unknown): SavedStoryPreferences {
   if (!data || typeof data !== "object") {
     return DEFAULT_STORY_PREFERENCES;
   }
 
   const record = data as Record<string, unknown>;
-  const characterName =
-    typeof record.character_name === "string" && record.character_name.trim()
-      ? record.character_name.trim()
-      : DEFAULT_STORY_PREFERENCES.character_name;
 
   return {
-    category: isCategory(record.category)
-      ? record.category
-      : DEFAULT_STORY_PREFERENCES.category,
+    mood: parseMood(record),
+    ending: parseEnding(record),
     visual_style: isVisualStyle(record.visual_style)
       ? record.visual_style
       : DEFAULT_STORY_PREFERENCES.visual_style,
-    story_type: isStoryType(record.story_type)
-      ? record.story_type
-      : DEFAULT_STORY_PREFERENCES.story_type,
     audience: isAudience(record.audience)
       ? record.audience
       : DEFAULT_STORY_PREFERENCES.audience,
@@ -91,7 +103,6 @@ function parseSavedPreferences(data: unknown): SavedStoryPreferences {
       record.music_volume <= 1
         ? record.music_volume
         : DEFAULT_STORY_PREFERENCES.music_volume,
-    character_name: characterName.slice(0, 50),
   };
 }
 

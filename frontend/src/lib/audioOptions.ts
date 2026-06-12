@@ -20,6 +20,284 @@ export const BASE_LLM_PROVIDERS: LlmProviderStatus[] = [
   },
 ];
 
+const OPENAI_VOICE_DATA: Array<{ key: string; description: string }> = [
+  {
+    key: "alloy",
+    description:
+      "Neutral and balanced — a reliable all-purpose narrator for any story.",
+  },
+  {
+    key: "ash",
+    description:
+      "Soft and gentle — comforting for younger listeners and calm stories.",
+  },
+  {
+    key: "ballad",
+    description:
+      "Melodic and lyrical — wonderful for fairy tales and poetic narration.",
+  },
+  {
+    key: "coral",
+    description:
+      "Warm and friendly — great for children's stories and upbeat adventures.",
+  },
+  {
+    key: "echo",
+    description:
+      "Warm and expressive — brings emotion and presence to heartfelt scenes.",
+  },
+  {
+    key: "fable",
+    description:
+      "Articulate and polished — wonderful for classic tales and fairy stories.",
+  },
+  {
+    key: "onyx",
+    description:
+      "Deep and authoritative — commanding voice for epic adventures and legends.",
+  },
+  {
+    key: "nova",
+    description:
+      "Energetic and friendly — perfect for upbeat heroes and lively adventures.",
+  },
+  {
+    key: "sage",
+    description:
+      "Calm and thoughtful — ideal for bedtime tales and reflective moments.",
+  },
+  {
+    key: "shimmer",
+    description:
+      "Soft and delicate — gentle narration for tender and quiet moments.",
+  },
+  {
+    key: "verse",
+    description:
+      "Expressive storyteller — suits fantasy, mystery, and dramatic scenes.",
+  },
+  {
+    key: "marin",
+    description:
+      "Clear and natural — high-quality narration for polished storytelling.",
+  },
+  {
+    key: "cedar",
+    description:
+      "Rich and warm — immersive narration with depth for captivating tales.",
+  },
+];
+
+const GEMINI_VOICE_DATA: Array<{
+  key: string;
+  gender: "Female" | "Male";
+  description: string;
+}> = [
+  {
+    key: "Achernar",
+    gender: "Female",
+    description:
+      "Luminous and poised — carries wonder and magic through dreamy tales.",
+  },
+  {
+    key: "Achird",
+    gender: "Male",
+    description:
+      "Friendly and approachable — a welcoming narrator for everyday adventures.",
+  },
+  {
+    key: "Algenib",
+    gender: "Male",
+    description:
+      "Crisp and clear — keeps pace in action-packed and informative tales.",
+  },
+  {
+    key: "Algieba",
+    gender: "Male",
+    description:
+      "Warm and conversational — natural for buddy stories and dialogue.",
+  },
+  {
+    key: "Alnilam",
+    gender: "Male",
+    description:
+      "Steady and grounded — dependable voice for journey and quest narratives.",
+  },
+  {
+    key: "Aoede",
+    gender: "Female",
+    description:
+      "Warm and expressive — rich emotion for friendship and inspiring stories.",
+  },
+  {
+    key: "Autonoe",
+    gender: "Female",
+    description:
+      "Gentle and flowing — ideal for nature stories and peaceful journeys.",
+  },
+  {
+    key: "Callirrhoe",
+    gender: "Female",
+    description:
+      "Playful and amused — brings lively dialogue and humorous moments to life.",
+  },
+  {
+    key: "Charon",
+    gender: "Male",
+    description:
+      "Deep and authoritative — perfect for epic quests and historical tales.",
+  },
+  {
+    key: "Despina",
+    gender: "Female",
+    description:
+      "Soft and nurturing — comforting for younger listeners and tender scenes.",
+  },
+  {
+    key: "Enceladus",
+    gender: "Male",
+    description:
+      "Cool and measured — suits mystery, science fiction, and suspense.",
+  },
+  {
+    key: "Erinome",
+    gender: "Female",
+    description:
+      "Melodic and graceful — wonderful for fairy tales and poetic narration.",
+  },
+  {
+    key: "Fenrir",
+    gender: "Male",
+    description:
+      "Bold and dramatic — heightens suspense, twists, and thrilling moments.",
+  },
+  {
+    key: "Gacrux",
+    gender: "Female",
+    description:
+      "Steady and assured — anchors adventure stories with quiet confidence.",
+  },
+  {
+    key: "Iapetus",
+    gender: "Male",
+    description:
+      "Resonant and solemn — impactful for myths and moral lessons.",
+  },
+  {
+    key: "Kore",
+    gender: "Female",
+    description: "Clear and balanced — a versatile narrator for any genre.",
+  },
+  {
+    key: "Laomedeia",
+    gender: "Female",
+    description:
+      "Bright and curious — perfect for discovery tales and eager young heroes.",
+  },
+  {
+    key: "Leda",
+    gender: "Female",
+    description:
+      "Warm and inviting — draws listeners into cozy, heartfelt stories.",
+  },
+  {
+    key: "Orus",
+    gender: "Male",
+    description:
+      "Confident and direct — drives forward momentum in exciting plots.",
+  },
+  {
+    key: "Pulcherrima",
+    gender: "Female",
+    description:
+      "Elegant and vivid — suits royal quests and enchanted kingdoms.",
+  },
+  {
+    key: "Puck",
+    gender: "Male",
+    description:
+      "Upbeat and energetic — brings comedy and adventure to life.",
+  },
+  {
+    key: "Rasalgethi",
+    gender: "Male",
+    description:
+      "Rich and storytelling — classic narrator tone for long-form tales.",
+  },
+  {
+    key: "Sadachbia",
+    gender: "Male",
+    description:
+      "Easygoing and warm — relaxed pacing for gentle humor and slice-of-life.",
+  },
+  {
+    key: "Sadaltager",
+    gender: "Male",
+    description:
+      "Expressive and theatrical — heightens drama and pivotal scenes.",
+  },
+  {
+    key: "Schedar",
+    gender: "Male",
+    description:
+      "Noble and steady — fitting for knights, heroes, and grand adventures.",
+  },
+  {
+    key: "Sulafat",
+    gender: "Female",
+    description:
+      "Smooth and soothing — ideal for bedtime and winding-down chapters.",
+  },
+  {
+    key: "Umbriel",
+    gender: "Male",
+    description:
+      "Deep and mysterious — adds atmosphere to shadowy woods and secrets.",
+  },
+  {
+    key: "Vindemiatrix",
+    gender: "Female",
+    description:
+      "Refined and articulate — great for legends and thoughtful fables.",
+  },
+  {
+    key: "Zephyr",
+    gender: "Female",
+    description:
+      "Light and breezy — adds sparkle to whimsical and fast-moving scenes.",
+  },
+  {
+    key: "Zubenelgenubi",
+    gender: "Male",
+    description:
+      "Distinctive and characterful — memorable for quirky tales and odd heroes.",
+  },
+];
+
+function buildOpenAiVoice(key: string, description: string): VoiceOption {
+  return {
+    id: `openai:${key}`,
+    provider: "openai",
+    label: key.charAt(0).toUpperCase() + key.slice(1),
+    description,
+    available: true,
+  };
+}
+
+function buildGeminiVoice(
+  key: string,
+  gender: "Female" | "Male",
+  description: string,
+): VoiceOption {
+  return {
+    id: `gemini:${key}`,
+    provider: "gemini",
+    label: key,
+    description: `${gender} — ${description}`,
+    available: true,
+  };
+}
+
 export const BASE_TTS_VOICES: VoiceOption[] = [
   {
     id: NO_VOICE_ID,
@@ -29,53 +307,12 @@ export const BASE_TTS_VOICES: VoiceOption[] = [
       "Read silently — no narration or text-to-speech for this story.",
     available: true,
   },
-  {
-    id: "openai:coral",
-    provider: "openai",
-    label: "Coral",
-    description:
-      "Warm and friendly — great for children's stories and upbeat adventures.",
-    available: true,
-  },
-  {
-    id: "openai:sage",
-    provider: "openai",
-    label: "Sage",
-    description:
-      "Calm and thoughtful — ideal for bedtime tales and reflective moments.",
-    available: true,
-  },
-  {
-    id: "openai:verse",
-    provider: "openai",
-    label: "Verse",
-    description:
-      "Expressive storyteller — suits fantasy, mystery, and dramatic scenes.",
-    available: true,
-  },
-  {
-    id: "gemini:Kore",
-    provider: "gemini",
-    label: "Kore",
-    description: "Clear and balanced — a versatile narrator for any genre.",
-    available: true,
-  },
-  {
-    id: "gemini:Charon",
-    provider: "gemini",
-    label: "Charon",
-    description:
-      "Deep and authoritative — perfect for epic quests and historical tales.",
-    available: true,
-  },
-  {
-    id: "gemini:Puck",
-    provider: "gemini",
-    label: "Puck",
-    description:
-      "Upbeat and energetic — brings comedy and adventure to life.",
-    available: true,
-  },
+  ...OPENAI_VOICE_DATA.map(({ key, description }) =>
+    buildOpenAiVoice(key, description),
+  ),
+  ...GEMINI_VOICE_DATA.map(({ key, gender, description }) =>
+    buildGeminiVoice(key, gender, description),
+  ),
 ];
 
 export function mergeLlmProviders(

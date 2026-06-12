@@ -53,12 +53,10 @@ class ImageService:
         self,
         scene_description: str,
         visual_style: str,
-        character_name: str,
     ) -> str:
         style_hint = STYLE_HINTS.get(visual_style, STYLE_HINTS["storybook"])
         return (
             f"{scene_description}. "
-            f"Feature the main character {character_name}. "
             f"Art style (strict): {style_hint}. "
             "No text, no words, no letters in the image. "
             "Single scene composition, appropriate for the story's tone."

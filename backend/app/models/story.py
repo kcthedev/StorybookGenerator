@@ -3,15 +3,6 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-class Genre(str, Enum):
-    ADVENTURE = "adventure"
-    COMEDY = "comedy"
-    FANTASY = "fantasy"
-    FAIRY_TALE = "fairy_tale"
-    FICTION = "fiction"
-    SCI_FI = "sci_fi"
-    SUPERHERO = "superhero"
-
 class ArtStyle(str, Enum):
     ANIME = "anime"
     CARTOON = "cartoon"
@@ -25,19 +16,6 @@ class Audience(str, Enum):
     ALL_AGES = "all_ages"
     TEEN = "teen"
     ADULT = "adult"
-
-
-class StoryType(str, Enum):
-    HAPPY_ENDING = "happy_ending"
-    OPEN_ENDING = "open_ending"
-    MYSTERY = "mystery"
-    AGE_RATED = "age_rated"
-    CHOOSE_YOUR_OWN = "choose_your_own"
-    SUSPENSE = "suspense"
-    INSPIRING = "inspiring"
-    QUEST = "quest"
-    SURPRISE_TWIST = "surprise_twist"
-    BEDTIME_CALM = "bedtime_calm"
 
 
 class ReadingLayout(str, Enum):
@@ -64,11 +42,10 @@ LLM_PROVIDER_LABELS = {
 
 class StoryOptions(BaseModel):
     idea: str = Field(..., min_length=3, max_length=500)
-    category: Genre
+    mood: int = Field(default=50, ge=0, le=100)
+    ending: int = Field(default=0, ge=0, le=100)
     visual_style: ArtStyle
-    story_type: StoryType
     audience: Audience = Audience.ALL_AGES
-    character_name: str = Field(default="Alex", min_length=1, max_length=50)
     llm_provider: LlmProvider = LlmProvider.OPENAI
     voice_id: str = "openai:coral"
     music_enabled: bool = False
@@ -120,7 +97,8 @@ class StorySummary(BaseModel):
     id: str
     title: str
     idea: str
-    category: Genre
+    mood: int
+    ending: int
     page_count: int
 
 

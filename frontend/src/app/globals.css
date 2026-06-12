@@ -46,6 +46,33 @@ body {
   @apply w-full rounded-xl border border-amber-200 bg-amber-50/50 px-4 py-2.5 text-amber-950 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300/50;
 }
 
+.tone-slider {
+  height: 0.5rem;
+  appearance: none;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #fcd34d 0%, #f59e0b 100%);
+  cursor: pointer;
+}
+
+.tone-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  background: #d97706;
+  box-shadow: 0 1px 4px rgb(120 53 15 / 25%);
+}
+
+.tone-slider::-moz-range-thumb {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  background: #d97706;
+  box-shadow: 0 1px 4px rgb(120 53 15 / 25%);
+}
+
 .reader-panel {
   @apply gap-6;
 }

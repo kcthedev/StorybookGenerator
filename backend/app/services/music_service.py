@@ -10,6 +10,7 @@ from google.genai.errors import APIError
 
 from app.config import settings
 from app.models.story import StoryOptions
+from app.services.story_tone import ending_guidance, mood_music_description
 from app.services.audio_storage import AudioStorage
 from app.services.google_client import (
     build_vertex_client,
@@ -23,24 +24,6 @@ logger = logging.getLogger(__name__)
 LYRIA3_MODELS = ("lyria-3-clip-preview", "lyria-3-pro-preview")
 LYRIA2_MODEL = "lyria-002"
 LYRIA_REGION = "us-central1"
-
-CATEGORY_MOODS = {
-    "adventure": "upbeat acoustic instruments with light rhythm",
-    "comedy": "playful plucked strings and bells",
-    "fantasy": "soft harp and flute textures",
-    "bedtime": "slow piano and warm pads",
-    "mystery": "quiet piano with subtle low strings",
-    "suspense": "gentle ambient pulses in a minor key",
-    "friendship": "warm acoustic guitar and soft bells",
-    "fairy_tale": "delicate music-box tones and harp",
-    "educational": "bright marimba and light piano",
-    "sci_fi": "soft synth pads with gentle arpeggios",
-    "animal": "gentle folk instruments with airy ambience",
-    "superhero": "light brass accents with steady drums",
-    "nature": "calm acoustic guitar with open ambience",
-    "historical": "measured string ensemble",
-    "fiction": "cinematic strings with a warm tone",
-}
 
 MINIMAL_PROMPTS = (
     "Soft instrumental background music. Calm and gentle. No vocals, no lyrics.",
@@ -76,20 +59,16 @@ class MusicService:
         return configured or LYRIA_REGION
 
     def build_prompt(self, options: StoryOptions, *, compact: bool = False) -> str:
-        mood = CATEGORY_MOODS.get(
-            options.category.value,
-            "soft cinematic instrumental underscore",
-        )
-        story_tone = options.story_type.value.replace("_", " ")
+        mood = mood_music_description(options.mood)
+        ending = ending_guidance(options.ending).split(".", maxsplit=1)[0]
         if compact:
             return (
-                f"Instrumental {mood}. Calm background music for a "
-                f"{story_tone} story. No vocals, no lyrics."
+                f"Instrumental {mood}. Calm background music for an "
+                f"interactive storybook. No vocals, no lyrics."
             )
         return (
-            f"Original instrumental background loop for a "
-            f"{options.category.value.replace('_', ' ')} storybook. "
-            f"Mood: {mood}. Story tone: {story_tone}. "
+            f"Original instrumental background loop for an interactive storybook. "
+            f"Mood: {mood}. {ending}. "
             f"Audience: {options.audience.value.replace('_', ' ')}. "
             "No vocals, no lyrics, gentle enough to sit under narration, "
             "and suitable for looping continuously."
