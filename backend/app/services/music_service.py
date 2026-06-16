@@ -25,10 +25,27 @@ LYRIA3_MODELS = ("lyria-3-clip-preview", "lyria-3-pro-preview")
 LYRIA2_MODEL = "lyria-002"
 LYRIA_REGION = "us-central1"
 
+STYLE_MUSIC_HINTS: dict[str, str] = {
+    "anime": "cinematic orchestral adventure with emotional swells",
+    "cartoon": "playful whimsical score with light percussion",
+    "crayon": "gentle playful children's music with simple melody",
+    "oil_painting": "warm classical strings and rich ambient harmony",
+    "pixel": "retro chiptune-inspired loop with nostalgic charm",
+    "realistic": "cinematic ambient score with natural atmosphere",
+    "watercolor": "soft pastoral instruments and dreamy pads",
+}
+
 MINIMAL_PROMPTS = (
     "Soft instrumental background music. Calm and gentle. No vocals, no lyrics.",
     "Light piano and strings. Instrumental only. No singing or speech.",
 )
+
+
+@dataclass(frozen=True)
+class MusicStoryContext:
+    title: str = ""
+    page_text: str = ""
+    scene_description: str = ""
 
 
 @dataclass(frozen=True)
@@ -58,27 +75,73 @@ class MusicService:
         configured = settings.lyria_location.strip()
         return configured or LYRIA_REGION
 
-    def build_prompt(self, options: StoryOptions, *, compact: bool = False) -> str:
+    @staticmethod
+    def _clip(text: str, limit: int) -> str:
+        cleaned = " ".join(text.split())
+        if len(cleaned) <= limit:
+            return cleaned
+        return cleaned[: limit - 1].rstrip() + "…"
+
+    def _story_summary(self, options: StoryOptions, context: MusicStoryContext | None) -> str:
+        parts: list[str] = []
+        if context and context.title.strip():
+            parts.append(f'Title: "{self._clip(context.title.strip(), 80)}"')
+        if options.idea.strip():
+            parts.append(f"Premise: {self._clip(options.idea.strip(), 160)}")
+        if context and context.page_text.strip():
+            parts.append(f"Opening: {self._clip(context.page_text.strip(), 180)}")
+        elif context and context.scene_description.strip():
+            parts.append(
+                f"Opening scene: {self._clip(context.scene_description.strip(), 160)}"
+            )
+        return " ".join(parts)
+
+    def _style_hint(self, options: StoryOptions) -> str:
+        return STYLE_MUSIC_HINTS.get(
+            options.visual_style.value,
+            "storybook-inspired instrumental score",
+        )
+
+    def build_prompt(
+        self,
+        options: StoryOptions,
+        context: MusicStoryContext | None = None,
+        *,
+        compact: bool = False,
+    ) -> str:
         mood = mood_music_description(options.mood)
         ending = ending_guidance(options.ending).split(".", maxsplit=1)[0]
+        style = self._style_hint(options)
+        audience = options.audience.value.replace("_", " ")
+        story_summary = self._story_summary(options, context)
+
         if compact:
+            core = story_summary or f"Premise: {self._clip(options.idea.strip(), 160)}"
             return (
-                f"Instrumental {mood}. Calm background music for an "
-                f"interactive storybook. No vocals, no lyrics."
+                f"Instrumental background loop for an interactive storybook. "
+                f"{core} Musical tone: {mood}, {style}. "
+                f"No vocals, no lyrics."
             )
+
         return (
             f"Original instrumental background loop for an interactive storybook. "
-            f"Mood: {mood}. {ending}. "
-            f"Audience: {options.audience.value.replace('_', ' ')}. "
+            f"{story_summary} "
+            f"Emotional tone: {mood}. Visual world: {style}. {ending}. "
+            f"Audience: {audience}. "
+            "Match the story's genre, setting, and atmosphere. "
             "No vocals, no lyrics, gentle enough to sit under narration, "
             "and suitable for looping continuously."
         )
 
-    def _prompts_to_try(self, options: StoryOptions) -> list[str]:
+    def _prompts_to_try(
+        self,
+        options: StoryOptions,
+        context: MusicStoryContext | None = None,
+    ) -> list[str]:
         prompts = [
-            self.build_prompt(options, compact=True),
+            self.build_prompt(options, context, compact=True),
+            self.build_prompt(options, context),
             *MINIMAL_PROMPTS,
-            self.build_prompt(options),
         ]
         seen: set[str] = set()
         ordered: list[str] = []
@@ -243,6 +306,7 @@ class MusicService:
         self,
         options: StoryOptions,
         story_id: str,
+        context: MusicStoryContext | None = None,
     ) -> Optional[str]:
         if story_id in self._unavailable_stories:
             return None
@@ -255,7 +319,7 @@ class MusicService:
             logger.warning("Lyria music skipped: Google client not configured")
             return None
 
-        prompts = self._prompts_to_try(options)
+        prompts = self._prompts_to_try(options, context)
         last_error: Exception | None = None
         region = self._active_region()
 

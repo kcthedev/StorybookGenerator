@@ -14,7 +14,7 @@ from app.models.story import (
     StorySummary,
 )
 from app.services.llm_factory import get_image_service, get_text_service
-from app.services.music_service import MusicService
+from app.services.music_service import MusicService, MusicStoryContext
 from app.services.story_text_service import StoryTextService
 from app.services.tts_service import TtsService
 from app.services.tts_voices import (
@@ -249,7 +249,11 @@ class StoryService:
         ):
             return story
 
-        music_url = self._music.generate_background_music(story.options, story_id)
+        music_url = self._music.generate_background_music(
+            story.options,
+            story_id,
+            self._music_context_from_story(story),
+        )
         if music_url:
             story = story.model_copy(update={"background_music_url": music_url})
         elif self._music.is_permanently_unavailable(story_id):
@@ -263,16 +267,35 @@ class StoryService:
                 return c
         return None
 
+    def _music_context_from_data(
+        self,
+        data: dict[str, Any],
+    ) -> MusicStoryContext:
+        return MusicStoryContext(
+            title=str(data.get("title") or ""),
+            page_text=str(data.get("text") or ""),
+            scene_description=str(data.get("scene_description") or ""),
+        )
+
+    def _music_context_from_story(self, story: StoryState) -> MusicStoryContext:
+        page = story.pages[0] if story.pages else None
+        return MusicStoryContext(
+            title=story.title,
+            page_text=page.text if page else "",
+            scene_description=page.scene_description if page else "",
+        )
+
     def _generate_story_music(
         self,
         options: StoryOptions,
         story_id: str,
+        context: MusicStoryContext | None = None,
         progress: CreationProgress | None = None,
     ) -> tuple[Optional[str], bool]:
         if not self._music_allowed(options):
             return None, False
 
-        music_url = self._music.generate_background_music(options, story_id)
+        music_url = self._music.generate_background_music(options, story_id, context)
         if progress:
             progress.mark("music")
         if music_url:
@@ -290,6 +313,7 @@ class StoryService:
         progress: CreationProgress | None = None,
     ) -> tuple[StoryPage, Optional[str], bool]:
         music_enabled = self._music_allowed(options)
+        music_context = self._music_context_from_data(data)
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             page_future = pool.submit(
@@ -306,6 +330,7 @@ class StoryService:
                     self._generate_story_music,
                     options,
                     story_id,
+                    music_context,
                     progress,
                 )
                 if music_enabled
