@@ -8,6 +8,7 @@ import type { StoryState } from "@/types/story";
 interface StoryNarrationProps {
   story: StoryState;
   pageIndex: number;
+  voiceRevision: number;
   onStoryUpdate: (story: StoryState) => void;
   disabled?: boolean;
 }
@@ -15,6 +16,7 @@ interface StoryNarrationProps {
 export function StoryNarration({
   story,
   pageIndex,
+  voiceRevision,
   onStoryUpdate,
   disabled = false,
 }: StoryNarrationProps) {
@@ -22,52 +24,89 @@ export function StoryNarration({
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const lastNarrationKeyRef = useRef<string | null>(null);
+  const lastVoiceRevisionRef = useRef(voiceRevision);
+  const requestIdRef = useRef(0);
 
   const page = story.pages[pageIndex];
   const audioUrl = page?.audio_url ?? null;
-  const voiceDisabled = isVoiceDisabled(story.options.voice_id);
+  const voiceId = story.options.voice_id ?? "";
+  const voiceDisabled = isVoiceDisabled(voiceId);
+  const narrationKey = `${pageIndex}:${voiceId}`;
+  const audioSrc = audioUrl
+    ? `${audioUrl}${audioUrl.includes("?") ? "&" : "?"}voice=${encodeURIComponent(voiceId)}`
+    : null;
 
   useEffect(() => {
     if (disabled || !page || voiceDisabled) {
       return;
     }
 
+    if (audioUrl && lastNarrationKeyRef.current === narrationKey) {
+      return;
+    }
+
+    const voiceJustChanged = voiceRevision !== lastVoiceRevisionRef.current;
+    lastVoiceRevisionRef.current = voiceRevision;
+
+    if (audioUrl && !voiceJustChanged) {
+      lastNarrationKeyRef.current = narrationKey;
+      return;
+    }
+
+    const requestId = ++requestIdRef.current;
+    const forceRegenerate = Boolean(audioUrl);
     let cancelled = false;
 
-    async function loadNarration() {
-      if (page.audio_url) {
-        return;
-      }
+    setLoading(true);
+    setError(null);
 
-      setLoading(true);
-      setError(null);
-      try {
-        const updated = await ensureNarration(story.id, pageIndex);
-        if (!cancelled) {
-          onStoryUpdate(updated);
+    void ensureNarration(story.id, pageIndex, forceRegenerate)
+      .then((updated) => {
+        if (cancelled || requestId !== requestIdRef.current) {
+          return;
         }
-      } catch (err) {
-        if (!cancelled) {
+
+        const nextAudioUrl = updated.pages[pageIndex]?.audio_url;
+        if (nextAudioUrl) {
+          lastNarrationKeyRef.current = narrationKey;
+          onStoryUpdate(updated);
+        } else {
+          setError("Could not generate narration for this voice.");
+        }
+      })
+      .catch((err) => {
+        if (!cancelled && requestId === requestIdRef.current) {
           setError(
             err instanceof Error ? err.message : "Could not generate narration",
           );
         }
-      } finally {
-        if (!cancelled) {
+      })
+      .finally(() => {
+        if (!cancelled && requestId === requestIdRef.current) {
           setLoading(false);
         }
-      }
-    }
+      });
 
-    void loadNarration();
     return () => {
       cancelled = true;
     };
-  }, [disabled, onStoryUpdate, page, pageIndex, story.id, voiceDisabled]);
+  }, [
+    audioUrl,
+    disabled,
+    narrationKey,
+    onStoryUpdate,
+    page,
+    pageIndex,
+    story.id,
+    voiceDisabled,
+    voiceId,
+    voiceRevision,
+  ]);
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !audioUrl || voiceDisabled) {
+    if (!audio || !audioSrc || voiceDisabled) {
       return;
     }
 
@@ -91,7 +130,7 @@ export function StoryNarration({
       audio.removeEventListener("canplaythrough", playWhenReady);
       audio.pause();
     };
-  }, [audioUrl, pageIndex, voiceDisabled]);
+  }, [audioSrc, pageIndex, voiceDisabled, voiceId]);
 
   function togglePlayback() {
     const audio = audioRef.current;
@@ -133,7 +172,7 @@ export function StoryNarration({
           {error}
         </p>
       )}
-      {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
+      {audioSrc && <audio ref={audioRef} src={audioSrc} preload="auto" />}
     </div>
   );
 }

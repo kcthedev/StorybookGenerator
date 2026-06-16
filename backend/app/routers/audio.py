@@ -60,10 +60,7 @@ def update_voice(story_id: str, body: UpdateVoiceRequest) -> NarrationResponse:
             )
 
     story = story_service.update_voice(story_id, body.voice_id)
-    page_index = story.current_page
-    if not is_voice_disabled(body.voice_id):
-        story = story_service.ensure_narration(story_id, page_index, force=True)
-    return NarrationResponse(story=story, page_index=page_index)
+    return NarrationResponse(story=story, page_index=story.current_page)
 
 
 @router.post("/stories/{story_id}/pages/{page_index}/narration", response_model=NarrationResponse)

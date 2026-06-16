@@ -195,17 +195,12 @@ class StoryService:
         story = story.model_copy(
             update={
                 "options": story.options.model_copy(update={"voice_id": voice_id}),
+                "pages": [
+                    page.model_copy(update={"audio_url": None})
+                    for page in story.pages
+                ],
             }
         )
-        if is_voice_disabled(voice_id):
-            story = story.model_copy(
-                update={
-                    "pages": [
-                        page.model_copy(update={"audio_url": None})
-                        for page in story.pages
-                    ],
-                }
-            )
         self._stories[story_id] = story
         return story
 

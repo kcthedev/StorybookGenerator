@@ -50,7 +50,7 @@ class TtsService:
         page_number: int,
     ) -> Optional[str]:
         instructions = build_narration_instructions(options)
-        dest = self._storage.narration_path(story_id, page_number)
+        dest = self._storage.narration_path(story_id, page_number, voice.id)
 
         providers = self._provider_chain(voice.provider)
         last_error: Exception | None = None

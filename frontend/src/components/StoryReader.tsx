@@ -37,6 +37,8 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
   );
   const [error, setError] = useState<string | null>(null);
   const [entering, setEntering] = useState(false);
+  const [pendingVoiceId, setPendingVoiceId] = useState<string | null>(null);
+  const [voiceRevision, setVoiceRevision] = useState(0);
 
   const page = story.pages[story.current_page];
   const canGoBack = story.current_page > 0;
@@ -45,7 +47,7 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
   const llmProvider = story.options.llm_provider ?? "openai";
   const voiceOptions = filterVoicesForLlm(voices, llmProvider);
   const selectedVoiceId = resolveVoiceForLlm(
-    story.options.voice_id,
+    pendingVoiceId ?? story.options.voice_id,
     llmProvider,
     voices,
   );
@@ -104,14 +106,21 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
   }
 
   async function handleVoiceChange(voiceId: string) {
+    if (voiceId === selectedVoiceId) {
+      return;
+    }
+
+    setPendingVoiceId(voiceId);
     setVoiceLoading(true);
     setError(null);
     try {
       const updated = await updateStoryVoice(story.id, voiceId);
       setStory(updated);
+      setVoiceRevision((revision) => revision + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update voice");
     } finally {
+      setPendingVoiceId(null);
       setVoiceLoading(false);
     }
   }
@@ -184,8 +193,9 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
             <StoryNarration
               story={story}
               pageIndex={story.current_page}
+              voiceRevision={voiceRevision}
               onStoryUpdate={setStory}
-              disabled={loading || voiceLoading}
+              disabled={loading}
             />
 
             <p className="text-lg leading-relaxed text-amber-950 md:text-xl">
