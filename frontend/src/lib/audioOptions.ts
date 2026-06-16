@@ -324,6 +324,29 @@ export function mergeLlmProviders(
   });
 }
 
+export const MAX_NARRATOR_VOICES = 7;
+
+export const CURATED_NARRATOR_VOICE_IDS: Record<LlmProvider, string[]> = {
+  openai: [
+    "openai:coral",
+    "openai:nova",
+    "openai:shimmer",
+    "openai:marin",
+    "openai:onyx",
+    "openai:echo",
+    "openai:cedar",
+  ],
+  gemini: [
+    "gemini:Kore",
+    "gemini:Aoede",
+    "gemini:Despina",
+    "gemini:Erinome",
+    "gemini:Achird",
+    "gemini:Charon",
+    "gemini:Enceladus",
+  ],
+};
+
 export function mergeTtsVoices(fetched: VoiceOption[]): VoiceOption[] {
   if (fetched.length === 0) {
     return BASE_TTS_VOICES;
@@ -340,6 +363,32 @@ export function filterVoicesForLlm(
   );
 }
 
+export function selectNarratorVoices(
+  voices: VoiceOption[],
+  llmProvider: LlmProvider = "openai",
+  selectedVoiceId?: string,
+): VoiceOption[] {
+  const providerVoices = voices.filter(
+    (voice) => voice.id !== NO_VOICE_ID && voice.provider === llmProvider,
+  );
+  const byId = new Map(providerVoices.map((voice) => [voice.id, voice]));
+  const curatedIds = CURATED_NARRATOR_VOICE_IDS[llmProvider];
+  const pool = curatedIds
+    .map((id) => byId.get(id))
+    .filter((voice): voice is VoiceOption => voice !== undefined);
+
+  if (!selectedVoiceId || selectedVoiceId === NO_VOICE_ID) {
+    return pool;
+  }
+
+  const selected = byId.get(selectedVoiceId);
+  if (selected && !pool.some((voice) => voice.id === selected.id)) {
+    return [selected, ...pool.slice(0, MAX_NARRATOR_VOICES - 1)];
+  }
+
+  return pool;
+}
+
 export function resolveVoiceForLlm(
   voiceId: string | undefined,
   llmProvider: LlmProvider,
@@ -350,11 +399,14 @@ export function resolveVoiceForLlm(
   }
 
   const filtered = filterVoicesForLlm(voices, llmProvider);
+  const curated = selectNarratorVoices(voices, llmProvider);
   if (voiceId && filtered.some((voice) => voice.id === voiceId)) {
     return voiceId;
   }
 
   return (
+    curated.find((voice) => voice.available)?.id ??
+    curated[0]?.id ??
     filtered.find((voice) => voice.id !== NO_VOICE_ID && voice.available)?.id ??
     filtered.find((voice) => voice.id !== NO_VOICE_ID)?.id ??
     DEFAULT_VOICE_BY_LLM[llmProvider]

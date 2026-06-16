@@ -12,7 +12,9 @@ import type {
 
 const STORAGE_KEY = "storybook-generator-preferences";
 
-export type SavedStoryPreferences = Omit<StoryOptions, "idea">;
+export type SavedStoryPreferences = Omit<StoryOptions, "idea"> & {
+  narration_speed?: number;
+};
 
 export const DEFAULT_STORY_PREFERENCES: SavedStoryPreferences = {
   mood: 50,
@@ -23,6 +25,7 @@ export const DEFAULT_STORY_PREFERENCES: SavedStoryPreferences = {
   voice_id: "openai:coral",
   music_enabled: false,
   music_volume: 0.22,
+  narration_speed: 1,
 };
 
 function isVisualStyle(value: unknown): value is ArtStyle {
@@ -103,6 +106,12 @@ function parseSavedPreferences(data: unknown): SavedStoryPreferences {
       record.music_volume <= 1
         ? record.music_volume
         : DEFAULT_STORY_PREFERENCES.music_volume,
+    narration_speed:
+      typeof record.narration_speed === "number" &&
+      record.narration_speed >= 0.5 &&
+      record.narration_speed <= 2
+        ? record.narration_speed
+        : DEFAULT_STORY_PREFERENCES.narration_speed,
   };
 }
 

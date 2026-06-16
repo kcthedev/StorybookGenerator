@@ -15,8 +15,13 @@ import {
   navigateToPage,
   updateStoryVoice,
 } from "@/lib/api";
-import { BASE_TTS_VOICES, filterVoicesForLlm, mergeTtsVoices, resolveVoiceForLlm } from "@/lib/audioOptions";
-import type { ReadingLayout, StoryState, VoiceOption } from "@/types/story";
+import { BASE_TTS_VOICES, mergeTtsVoices, resolveVoiceForLlm, selectNarratorVoices } from "@/lib/audioOptions";
+import {
+  DEFAULT_STORY_PREFERENCES,
+  loadStoryPreferences,
+  saveStoryPreferences,
+} from "@/lib/storyPreferences";
+import { isVoiceDisabled, NO_VOICE_ID, type ReadingLayout, type StoryState, type VoiceOption } from "@/types/story";
 
 interface StoryReaderProps {
   initialStory: StoryState;
@@ -39,17 +44,39 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
   const [entering, setEntering] = useState(false);
   const [pendingVoiceId, setPendingVoiceId] = useState<string | null>(null);
   const [voiceRevision, setVoiceRevision] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(
+    () =>
+      loadStoryPreferences().narration_speed ??
+      DEFAULT_STORY_PREFERENCES.narration_speed ??
+      1,
+  );
 
   const page = story.pages[story.current_page];
   const canGoBack = story.current_page > 0;
   const canGoForward = story.current_page < story.pages.length - 1;
   const isSplitLayout = layout === "split";
   const llmProvider = story.options.llm_provider ?? "openai";
-  const voiceOptions = filterVoicesForLlm(voices, llmProvider);
-  const selectedVoiceId = resolveVoiceForLlm(
-    pendingVoiceId ?? story.options.voice_id,
+  const narrationEnabled = !isVoiceDisabled(story.options.voice_id);
+  const [preferredVoiceId, setPreferredVoiceId] = useState(() =>
+    resolveVoiceForLlm(
+      isVoiceDisabled(initialStory.options.voice_id)
+        ? undefined
+        : initialStory.options.voice_id,
+      initialStory.options.llm_provider ?? "openai",
+      BASE_TTS_VOICES,
+    ),
+  );
+  const resolvedVoiceId = resolveVoiceForLlm(
+    narrationEnabled
+      ? (pendingVoiceId ?? story.options.voice_id)
+      : preferredVoiceId,
     llmProvider,
     voices,
+  );
+  const narratorVoices = selectNarratorVoices(
+    voices,
+    llmProvider,
+    resolvedVoiceId,
   );
 
   useEffect(() => {
@@ -105,9 +132,25 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
     await refresh(() => getStory(story.id), { mode: "navigating" });
   }
 
-  async function handleVoiceChange(voiceId: string) {
-    if (voiceId === selectedVoiceId) {
+  async function handleVoiceChange(
+    voiceId: string,
+    options?: { bumpRevision?: boolean },
+  ) {
+    const currentVoiceId = narrationEnabled
+      ? resolvedVoiceId
+      : NO_VOICE_ID;
+    if (voiceId === currentVoiceId) {
       return;
+    }
+
+    const bumpRevision = options?.bumpRevision ?? (
+      !isVoiceDisabled(voiceId) &&
+      !isVoiceDisabled(story.options.voice_id) &&
+      voiceId !== story.options.voice_id
+    );
+
+    if (!isVoiceDisabled(voiceId)) {
+      setPreferredVoiceId(resolveVoiceForLlm(voiceId, llmProvider, voices));
     }
 
     setPendingVoiceId(voiceId);
@@ -116,13 +159,28 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
     try {
       const updated = await updateStoryVoice(story.id, voiceId);
       setStory(updated);
-      setVoiceRevision((revision) => revision + 1);
+      if (bumpRevision) {
+        setVoiceRevision((revision) => revision + 1);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update voice");
     } finally {
       setPendingVoiceId(null);
       setVoiceLoading(false);
     }
+  }
+
+  async function handleNarrationEnabledChange(enabled: boolean) {
+    const nextVoiceId = enabled ? preferredVoiceId : NO_VOICE_ID;
+    await handleVoiceChange(nextVoiceId, { bumpRevision: false });
+  }
+
+  function handlePlaybackRateChange(rate: number) {
+    setPlaybackRate(rate);
+    saveStoryPreferences({
+      ...loadStoryPreferences(),
+      narration_speed: rate,
+    });
   }
 
   return (
@@ -163,10 +221,12 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
       <BackgroundMusic story={story} onStoryUpdate={setStory} />
 
       <VoiceSelector
-        voices={voiceOptions}
-        selectedVoiceId={selectedVoiceId}
+        voices={narratorVoices}
+        selectedVoiceId={resolvedVoiceId}
+        narrationEnabled={narrationEnabled}
         loading={voiceLoading}
         voicesLoading={voicesLoading}
+        onNarrationEnabledChange={handleNarrationEnabledChange}
         onChange={handleVoiceChange}
       />
 
@@ -194,6 +254,8 @@ export function StoryReader({ initialStory }: StoryReaderProps) {
               story={story}
               pageIndex={story.current_page}
               voiceRevision={voiceRevision}
+              playbackRate={playbackRate}
+              onPlaybackRateChange={handlePlaybackRateChange}
               onStoryUpdate={setStory}
               disabled={loading}
             />

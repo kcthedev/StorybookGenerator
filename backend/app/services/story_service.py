@@ -192,13 +192,26 @@ class StoryService:
         story = self.get_story(story_id)
         if not is_voice_disabled(voice_id) and not get_voice(voice_id):
             raise HTTPException(status_code=400, detail="Unknown voice")
+
+        previous_voice_id = story.options.voice_id
+        should_clear_audio = (
+            not is_voice_disabled(voice_id)
+            and not is_voice_disabled(previous_voice_id)
+            and voice_id != previous_voice_id
+        )
+
+        pages = (
+            [
+                page.model_copy(update={"audio_url": None})
+                for page in story.pages
+            ]
+            if should_clear_audio
+            else list(story.pages)
+        )
         story = story.model_copy(
             update={
                 "options": story.options.model_copy(update={"voice_id": voice_id}),
-                "pages": [
-                    page.model_copy(update={"audio_url": None})
-                    for page in story.pages
-                ],
+                "pages": pages,
             }
         )
         self._stories[story_id] = story

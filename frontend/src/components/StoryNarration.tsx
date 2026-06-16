@@ -5,10 +5,15 @@ import { ensureNarration } from "@/lib/api";
 import { isVoiceDisabled } from "@/types/story";
 import type { StoryState } from "@/types/story";
 
+const MIN_PLAYBACK_RATE = 0.5;
+const MAX_PLAYBACK_RATE = 2;
+
 interface StoryNarrationProps {
   story: StoryState;
   pageIndex: number;
   voiceRevision: number;
+  playbackRate: number;
+  onPlaybackRateChange: (rate: number) => void;
   onStoryUpdate: (story: StoryState) => void;
   disabled?: boolean;
 }
@@ -17,6 +22,8 @@ export function StoryNarration({
   story,
   pageIndex,
   voiceRevision,
+  playbackRate,
+  onPlaybackRateChange,
   onStoryUpdate,
   disabled = false,
 }: StoryNarrationProps) {
@@ -110,11 +117,13 @@ export function StoryNarration({
       return;
     }
 
+    audio.playbackRate = playbackRate;
     audio.pause();
     audio.load();
     setPlaying(false);
 
     const playWhenReady = () => {
+      audio.playbackRate = playbackRate;
       void audio.play().then(() => setPlaying(true)).catch(() => {
         setPlaying(false);
       });
@@ -132,6 +141,14 @@ export function StoryNarration({
     };
   }, [audioSrc, pageIndex, voiceDisabled, voiceId]);
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) {
+      return;
+    }
+    audio.playbackRate = playbackRate;
+  }, [playbackRate]);
+
   function togglePlayback() {
     const audio = audioRef.current;
     if (!audio || !audioUrl) {
@@ -139,6 +156,7 @@ export function StoryNarration({
     }
 
     if (audio.paused) {
+      audio.playbackRate = playbackRate;
       void audio.play().then(() => setPlaying(true));
     } else {
       audio.pause();
@@ -146,29 +164,69 @@ export function StoryNarration({
     }
   }
 
+  function replayNarration() {
+    const audio = audioRef.current;
+    if (!audio || !audioUrl || loading || disabled) {
+      return;
+    }
+
+    audio.playbackRate = playbackRate;
+    audio.currentTime = 0;
+    void audio.play().then(() => setPlaying(true)).catch(() => {
+      setPlaying(false);
+    });
+  }
+
   if (!page || voiceDisabled) {
     return null;
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-100 bg-white/80 px-4 py-3">
-      <button
-        type="button"
-        onClick={togglePlayback}
-        disabled={!audioUrl || loading || disabled}
-        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {loading ? "Preparing narration…" : playing ? "Pause narration" : "Play narration"}
-      </button>
-      <p className="text-sm text-amber-800/90">
-        {loading
-          ? "Generating voice for this page…"
-          : audioUrl
-            ? "Narration follows your genre and story style."
-            : "Narration will appear when a voice provider is available."}
-      </p>
+    <div className="space-y-3 rounded-xl border border-amber-100 bg-white/80 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={togglePlayback}
+          disabled={!audioUrl || loading || disabled}
+          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loading ? "Preparing narration…" : playing ? "Pause" : "Play"}
+        </button>
+        <button
+          type="button"
+          onClick={replayNarration}
+          disabled={!audioUrl || loading || disabled}
+          className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:border-amber-300 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Replay
+        </button>
+        {loading && (
+          <p className="text-sm text-amber-800/90">
+            Generating voice for this page…
+          </p>
+        )}
+      </div>
+
+      <label className="flex min-w-[12rem] items-center gap-3 text-sm text-amber-800/90">
+        <span className="shrink-0 font-medium">Read speed</span>
+        <input
+          type="range"
+          min={MIN_PLAYBACK_RATE * 100}
+          max={MAX_PLAYBACK_RATE * 100}
+          step={5}
+          value={Math.round(playbackRate * 100)}
+          onChange={(e) => onPlaybackRateChange(Number(e.target.value) / 100)}
+          disabled={!audioUrl || loading || disabled}
+          className="h-2 w-full cursor-pointer accent-amber-500 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Narration read speed"
+        />
+        <span className="w-10 shrink-0 text-right tabular-nums">
+          {playbackRate.toFixed(1)}×
+        </span>
+      </label>
+
       {error && (
-        <p className="w-full text-sm text-red-700" role="alert">
+        <p className="text-sm text-red-700" role="alert">
           {error}
         </p>
       )}

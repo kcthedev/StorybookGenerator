@@ -139,15 +139,13 @@ export function BackgroundMusic({ story, onStoryUpdate }: BackgroundMusicProps) 
         </span>
       </label>
 
-      <p className="w-full text-sm text-amber-800/90 sm:w-auto sm:flex-1">
-        {story.background_music_unavailable
-          ? "Background music is unavailable for this story."
-          : loading
-            ? "Composing background music…"
-            : enabled
-              ? "Ambient loop inspired by your story genre."
-              : "Background music paused."}
-      </p>
+      {(story.background_music_unavailable || loading) && (
+        <p className="w-full text-sm text-amber-800/90 sm:w-auto sm:flex-1">
+          {story.background_music_unavailable
+            ? "Background music is unavailable for this story."
+            : "Composing background music…"}
+        </p>
+      )}
 
       {hasAudio && (
         <audio

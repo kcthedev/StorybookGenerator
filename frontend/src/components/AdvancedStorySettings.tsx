@@ -1,18 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { VoiceSelector } from "@/components/VoiceSelector";
-import type { LlmProvider, LlmProviderStatus, VoiceOption } from "@/types/story";
+import type { LlmProvider, LlmProviderStatus } from "@/types/story";
 
 interface AdvancedStorySettingsProps {
   llmProvider: LlmProvider;
   llmProviders: LlmProviderStatus[];
-  voices: VoiceOption[];
-  selectedVoiceId: string;
-  voicesLoading: boolean;
   musicEnabled: boolean;
   onLlmProviderChange: (provider: LlmProvider) => void;
-  onVoiceChange: (voiceId: string) => void;
   onMusicEnabledChange: (enabled: boolean) => void;
 }
 
@@ -39,12 +34,8 @@ function ChevronIcon({ open }: { open: boolean }) {
 export function AdvancedStorySettings({
   llmProvider,
   llmProviders,
-  voices,
-  selectedVoiceId,
-  voicesLoading,
   musicEnabled,
   onLlmProviderChange,
-  onVoiceChange,
   onMusicEnabledChange,
 }: AdvancedStorySettingsProps) {
   const [open, setOpen] = useState(false);
@@ -53,10 +44,8 @@ export function AdvancedStorySettings({
   const llmLabel =
     llmProviders.find((provider) => provider.id === llmProvider)?.label ??
     llmProvider;
-  const voiceLabel =
-    voices.find((voice) => voice.id === selectedVoiceId)?.label ?? "Default";
 
-  const summaryParts = [llmLabel, voiceLabel];
+  const summaryParts = [llmLabel];
   if (musicAvailable && musicEnabled) {
     summaryParts.push("Music on");
   }
@@ -112,13 +101,6 @@ export function AdvancedStorySettings({
               ))}
             </select>
           </div>
-
-          <VoiceSelector
-            voices={voices}
-            selectedVoiceId={selectedVoiceId}
-            voicesLoading={voicesLoading}
-            onChange={onVoiceChange}
-          />
 
           <div className="rounded-xl border border-amber-100 bg-amber-50/40 px-4 py-3">
             <label

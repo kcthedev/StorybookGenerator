@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { createStory, getLlmProviders, getTtsVoices } from "@/lib/api";
 import { AdvancedStorySettings } from "@/components/AdvancedStorySettings";
+import { VoiceSelector } from "@/components/VoiceSelector";
 import {
   DEFAULT_STORY_PREFERENCES,
   loadStoryPreferences,
@@ -13,14 +14,16 @@ import {
   AUDIENCE_OPTIONS,
   VISUAL_STYLE_OPTIONS,
 } from "@/lib/storyLabels";
-import { BASE_LLM_PROVIDERS, BASE_TTS_VOICES, filterVoicesForLlm, mergeLlmProviders, mergeTtsVoices, resolveVoiceForLlm } from "@/lib/audioOptions";
+import { BASE_LLM_PROVIDERS, BASE_TTS_VOICES, mergeLlmProviders, mergeTtsVoices, resolveVoiceForLlm, selectNarratorVoices } from "@/lib/audioOptions";
 import { DEFAULT_STORY_HINT, getRandomStoryHint } from "@/lib/storyHints";
-import type {
-  Audience,
-  LlmProviderStatus,
-  StoryOptions,
-  VoiceOption,
-  ArtStyle,
+import {
+  isVoiceDisabled,
+  NO_VOICE_ID,
+  type Audience,
+  type LlmProviderStatus,
+  type StoryOptions,
+  type VoiceOption,
+  type ArtStyle,
 } from "@/types/story";
 
 const defaultOptions: StoryOptions = {
@@ -41,12 +44,20 @@ export function StoryCreator() {
   const [storyHint, setStoryHint] = useState<string>(DEFAULT_STORY_HINT);
 
   const llmProvider = options.llm_provider ?? "openai";
-  const filteredVoices = filterVoicesForLlm(voices, llmProvider);
-  const selectedVoiceId = resolveVoiceForLlm(
-    options.voice_id,
+  const narrationEnabled = !isVoiceDisabled(options.voice_id);
+  const [preferredVoiceId, setPreferredVoiceId] = useState(() =>
+    resolveVoiceForLlm(
+      isVoiceDisabled(defaultOptions.voice_id) ? undefined : defaultOptions.voice_id,
+      defaultOptions.llm_provider ?? "openai",
+      BASE_TTS_VOICES,
+    ),
+  );
+  const resolvedVoiceId = resolveVoiceForLlm(
+    narrationEnabled ? options.voice_id : preferredVoiceId,
     llmProvider,
     voices,
   );
+  const narratorVoices = selectNarratorVoices(voices, llmProvider, resolvedVoiceId);
 
   useEffect(() => {
     setStoryHint(getRandomStoryHint());
@@ -85,8 +96,11 @@ export function StoryCreator() {
       return;
     }
     const resolved = resolveVoiceForLlm(options.voice_id, llmProvider, voices);
-    if (resolved !== options.voice_id) {
+    if (resolved !== options.voice_id && narrationEnabled) {
       updatePreferences({ voice_id: resolved });
+    }
+    if (!isVoiceDisabled(options.voice_id)) {
+      setPreferredVoiceId(resolved);
     }
   }, [voicesLoading, llmProvider, voices]);
 
@@ -214,28 +228,44 @@ export function StoryCreator() {
         </Field>
       </div>
 
+      <VoiceSelector
+        voices={narratorVoices}
+        selectedVoiceId={resolvedVoiceId}
+        narrationEnabled={narrationEnabled}
+        voicesLoading={voicesLoading}
+        onNarrationEnabledChange={(enabled) =>
+          updatePreferences({
+            voice_id: enabled ? preferredVoiceId : NO_VOICE_ID,
+          })
+        }
+        onChange={(voiceId) => {
+          setPreferredVoiceId(voiceId);
+          updatePreferences({ voice_id: voiceId });
+        }}
+      />
+
       <AdvancedStorySettings
         llmProvider={llmProvider}
         llmProviders={llmProviders}
-        voices={filteredVoices}
-        selectedVoiceId={selectedVoiceId}
-        voicesLoading={voicesLoading}
         musicEnabled={options.music_enabled ?? false}
-        onLlmProviderChange={(nextProvider) =>
+        onLlmProviderChange={(nextProvider) => {
+          const nextVoice = narrationEnabled
+            ? resolveVoiceForLlm(options.voice_id, nextProvider, voices)
+            : preferredVoiceId;
+          if (!narrationEnabled) {
+            setPreferredVoiceId(
+              resolveVoiceForLlm(preferredVoiceId, nextProvider, voices),
+            );
+          }
           updatePreferences({
             llm_provider: nextProvider,
-            voice_id: resolveVoiceForLlm(
-              options.voice_id,
-              nextProvider,
-              voices,
-            ),
+            voice_id: narrationEnabled ? nextVoice : NO_VOICE_ID,
             music_enabled:
               nextProvider === "gemini"
                 ? (options.music_enabled ?? false)
                 : false,
-          })
-        }
-        onVoiceChange={(voiceId) => updatePreferences({ voice_id: voiceId })}
+          });
+        }}
         onMusicEnabledChange={(enabled) =>
           updatePreferences({ music_enabled: enabled })
         }
